@@ -1,0 +1,16 @@
+.bg-primary-custom {
+  background-color: #283276 !important;
+  transition: background-color 0.3s ease;
+
+  img {
+    width: 16px;
+  }
+}
+
+.bg-primary-custom-hover:hover {
+  background-color: #1B2256 !important;
+}
+
+.bg-primary-custom-hover:active {
+  background-color: #0f1438 !important;
+}
