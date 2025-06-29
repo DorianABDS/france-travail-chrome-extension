@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "Extension France Travail réinscription automatique",
+  "version": "1.0",
+  "description": "Ajoute un bouton de réinscription automatique sur la page, avec confirmation après actualisation.",
+  "icons": {
+    "128": "icons/franceTravail.png"
+  },
+  "permissions": [
+    "storage",
+    "tabs",
+    "scripting"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["styles.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_icon": {
+      "128": "icons/franceTravail.png"
+    }
+  }
+}
