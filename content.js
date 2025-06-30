@@ -19,24 +19,37 @@ if (!document.getElementById('btn-automatic-update')) {
 
     button.addEventListener('click', () => {
         localStorage.setItem('autoActuActive', 'true');
-        location.reload();
+        window.location.href = '/candidat/actualisation/declaration';
     });
 
     document.body.appendChild(button);
 }
 
 const autoActu = localStorage.getItem('autoActuActive') === 'true';
-const url = window.location.href;
+const url = window.location.pathname + window.location.search;
+console.log("Path détecté :", url);
 
 if (autoActu) {
-    if (url.includes('/declaration/activites')) {
+    if (url === '/candidat/actualisation/declaration') {
+        startActualisation();
+    } else if (/\/declaration\/activites/.test(url)) {
         pageActivities();
-    } else if (url.includes('/declaration/situations-particulieres')) {
+    } else if (/\/declaration\/situations-particulieres/.test(url)) {
         pageSpecialSituations();
-    } else if (url.includes('/declaration/validation')) {
+    } else if (/\/declaration\/validation/.test(url)) {
         pageValidation();
     } else {
-        console.log("Page actuelle non trouvée");
+        console.log("Page non encore prise en charge :", url);
+    }
+}
+
+function startActualisation() {
+    console.log("Page de départ détectée, tentative de lancement de l’actualisation...");
+    const startBtn = document.querySelector('a[href*="/declaration/activites"]');
+    if (startBtn) {
+        setTimeout(() => startBtn.click(), 500);
+    } else {
+        console.warn("Lien vers les activités non trouvé !");
     }
 }
 
@@ -46,7 +59,13 @@ function pageActivities() {
     if (checkbox) checkbox.checked = true;
 
     const button = document.querySelector('#submit-activites');
-    if (button) setTimeout(() => button.click(), 300);
+    if (button) {
+        setTimeout(() => button.click(), 300);
+    }
+
+    setTimeout(() => {
+        window.location.href = '/declaration/situations-particulieres';
+    }, 1200);
 }
 
 function pageSpecialSituations() {
@@ -60,7 +79,13 @@ function pageSpecialSituations() {
     if (pension) pension.checked = true;
 
     const button = document.querySelector('#submit-situation-particuliere');
-    if (button) setTimeout(() => button.click(), 300);
+    if (button) {
+        setTimeout(() => button.click(), 300);
+    }
+
+    setTimeout(() => {
+        window.location.href = '/declaration/validation';
+    }, 1200);
 }
 
 function pageValidation() {
@@ -68,16 +93,14 @@ function pageValidation() {
     const checkbox = document.querySelector('#question-maintienInscription-oui');
     if (checkbox) checkbox.checked = true;
 
-    // const button = document.querySelector('#btn-valider-actu');
-    // if (button) {
-    //     setTimeout(() => {
-    //         button.click();
-
-    //         localStorage.removeItem('autoActuActive');
-
-    //         alert("Actualisation automatique terminée avec succès !");
-    //     }, 500);
-    // } else {
-    //     console.warn("Bouton de validation non trouvé !");
-    // }
+    const button = document.querySelector('#btn-valider-actu');
+    if (button) {
+        setTimeout(() => {
+            button.click();
+            localStorage.removeItem('autoActuActive');
+            alert("Actualisation automatique terminée avec succès !");
+        }, 600);
+    } else {
+        console.warn("Bouton de validation non trouvé !");
+    }
 }
