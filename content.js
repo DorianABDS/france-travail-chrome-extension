@@ -8,7 +8,7 @@ if (!document.getElementById('btn-automatic-update')) {
     button.style.zIndex = '10000';
 
     const img = document.createElement('img');
-    img.src = chrome.runtime.getURL('/icons/actu-auto.svg');
+    img.src = chrome.runtime.getURL('icons/actu-auto.svg');
     img.className = 'me-2';
     img.alt = "Actualisation automatique";
     img.style.width = '16px';
@@ -35,6 +35,8 @@ if (autoActu) {
         pageSpecialSituations();
     } else if (url.includes('/declaration/validation')) {
         pageValidation();
+    } else {
+        console.log("Page actuelle non trouvée");
     }
 }
 
@@ -66,14 +68,16 @@ function pageValidation() {
     const checkbox = document.querySelector('#question-maintienInscription-oui');
     if (checkbox) checkbox.checked = true;
 
-    console.log('test OK');
-
     // const button = document.querySelector('#btn-valider-actu');
     // if (button) {
-    //     localStorage.removeItem('autoActuActive');
     //     setTimeout(() => {
     //         button.click();
-    //         alert("Actualisation terminée !");
+
+    //         localStorage.removeItem('autoActuActive');
+
+    //         alert("Actualisation automatique terminée avec succès !");
     //     }, 500);
+    // } else {
+    //     console.warn("Bouton de validation non trouvé !");
     // }
 }
