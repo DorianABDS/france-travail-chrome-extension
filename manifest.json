@@ -8,8 +8,10 @@
   },
   "permissions": [
     "storage",
-    "tabs",
     "scripting"
+  ],
+  "host_permissions": [
+    "https://actualisationenrichie.francetravail.fr/*"
   ],
   "content_scripts": [
     {
