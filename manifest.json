@@ -4,7 +4,7 @@
   "version": "1.0",
   "description": "Ajoute un bouton de réinscription automatique sur la page, avec confirmation après actualisation.",
   "icons": {
-    "128": "icons/franceTravail.png"
+    "128": "icons/franceTravail.webp"
   },
   "permissions": [
     "storage",
@@ -21,7 +21,7 @@
   ],
   "action": {
     "default_icon": {
-      "128": "icons/franceTravail.png"
+      "128": "icons/franceTravail.webp"
     }
   }
 }
