@@ -1,16 +1,53 @@
-.bg-primary-custom {
-  background-color: #283276 !important;
-  transition: background-color 0.3s ease;
+.btn-auto-update {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background-color: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: background-color 0.2s ease;
+}
 
-  img {
+.btn-auto-update:hover {
+    background-color: #1d4ed8;
+}
+
+.icon-auto-update {
     width: 16px;
-  }
+    height: 16px;
 }
 
-.bg-primary-custom-hover:hover {
-  background-color: #1B2256 !important;
+.toast-auto-update {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    background-color: #007bff;
+    color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 10000;
+    font-weight: bold;
+    animation: fadein 0.3s ease, fadeout 0.3s ease 2.7s;
 }
 
-.bg-primary-custom-hover:active {
-  background-color: #0f1438 !important;
+/* Animation pour apparition et disparition */
+@keyframes fadein {
+    from {opacity: 0; transform: translateY(-10px);}
+    to {opacity: 1; transform: translateY(0);}
+}
+
+@keyframes fadeout {
+    from {opacity: 1; transform: translateY(0);}
+    to {opacity: 0; transform: translateY(-10px);}
 }
