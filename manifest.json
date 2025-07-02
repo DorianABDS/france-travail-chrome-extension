@@ -15,7 +15,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["icons/actu-auto.svg"],
+      "resources": ["styles.css", "icons/actu-auto.svg"],
       "matches": ["https://*.francetravail.fr/*"]
     }
   ]
