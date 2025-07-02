@@ -11,18 +11,19 @@ function injectCssIfNeeded() {
 }
 injectCssIfNeeded();
 
+// Fonction qui vérifie si la date est entre le 28 et le 15 du mois
+function isWithinUpdatePeriod() {
+    const today = new Date();
+    const day = today.getDate();
+
+    return (day >= 28 || day <= 15);
+}
+
 // Ajout du bouton flottant si non déjà présent dans la page
-if (!document.getElementById('btn-automatic-update')) {
+if (isWithinUpdatePeriod() && !document.getElementById('btn-automatic-update')) {
     const button = document.createElement('button');
     button.id = 'btn-automatic-update';
     button.className = 'btn-auto-update';
-
-    // Icône dans le bouton
-    const img = document.createElement('img');
-    img.src = chrome.runtime.getURL('icons/actu-auto.svg');
-    img.alt = "Actualisation automatique";
-    img.className = 'icon-auto-update';
-    button.appendChild(img);
 
     // Texte du bouton
     const text = document.createTextNode("S'actualiser automatiquement");
@@ -109,6 +110,9 @@ function pageValidation() {
         setTimeout(() => {
             // button.click();
             // localStorage.removeItem('autoActuActive');
+
+            const autoBtn = document.getElementById('btn-automatic-update');
+            if (autoBtn) autoBtn.remove();
 
             setTimeout(() => {
                 alert("Votre actualisation a bien été effectuée avec succès !");
