@@ -1,19 +1,27 @@
+// Injecte le CSS de l'extension dans la page active
+function injectCssIfNeeded() {
+    if (!document.getElementById('auto-update-style')) {
+        const style = document.createElement('link');
+        style.id = 'auto-update-style';
+        style.rel = 'stylesheet';
+        style.type = 'text/css';
+        style.href = chrome.runtime.getURL('styles.css');
+        document.head.appendChild(style);
+    }
+}
+injectCssIfNeeded();
+
 // Ajout du bouton flottant si non déjà présent dans la page
 if (!document.getElementById('btn-automatic-update')) {
     const button = document.createElement('button');
     button.id = 'btn-automatic-update';
-    button.className = 'btn bg-primary-custom bg-primary-custom-hover text-light fw-medium rounded-4 py-2';
-    button.style.position = 'fixed';
-    button.style.bottom = '20px';
-    button.style.right = '20px';
-    button.style.zIndex = '10000';
+    button.className = 'btn-auto-update';
 
     // Icône dans le bouton
     const img = document.createElement('img');
     img.src = chrome.runtime.getURL('icons/actu-auto.svg');
-    img.className = 'me-2';
     img.alt = "Actualisation automatique";
-    img.style.width = '16px';
+    img.className = 'icon-auto-update';
     button.appendChild(img);
 
     // Texte du bouton
@@ -36,28 +44,19 @@ if (localStorage.getItem('autoActuActive') === 'true') {
     const url = window.location.pathname;
 
     if (/\/declaration\/activites/.test(url)) {
-        pageActivities(); // étape 1
+        pageActivities();
     } else if (/\/declaration\/situations-particulieres/.test(url)) {
-        pageSpecialSituations(); // étape 2
+        pageSpecialSituations();
     } else if (/\/declaration\/validation/.test(url)) {
-        pageValidation(); // étape 3
+        pageValidation();
     }
 }
 
 // Affiche un petit toast (notification visuelle)
 function showToast(message) {
     const toast = document.createElement('div');
-    toast.textContent = message;
-    toast.style.position = 'fixed';
-    toast.style.top = '20px';
-    toast.style.right = '20px';
-    toast.style.padding = '12px 20px';
-    toast.style.backgroundColor = '#007bff';
-    toast.style.color = '#fff';
-    toast.style.borderRadius = '8px';
-    toast.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
-    toast.style.zIndex = '10000';
-    toast.style.fontWeight = 'bold';
+    toast.textContent = message
+    toast.className = "toast-auto-update"
 
     document.body.appendChild(toast);
 
@@ -73,14 +72,12 @@ function pageActivities() {
     const button = document.querySelector('#submit-activites');
 
     if (checkbox) checkbox.checked = true;
-
+    
     if (button) {
         setTimeout(() => button.click(), 300);
     }
-
-    // Redirection vers l'étape suivante
     setTimeout(() => {
-        window.location.href = '/declaration/situations-particulieres';
+        window.location.href = window.location.href.replace('/activites', '/situations-particulieres');
     }, 1200);
 }
 
@@ -89,7 +86,7 @@ function pageSpecialSituations() {
     document.querySelector('#question-formation-non')?.click();
     document.querySelector('#question-pam-non')?.click();
     document.querySelector('#question-pension-non')?.click();
-
+    
     const button = document.querySelector('#submit-situation-particuliere');
     if (button) {
         setTimeout(() => button.click(), 300);
@@ -97,7 +94,7 @@ function pageSpecialSituations() {
 
     // Redirection vers la validation
     setTimeout(() => {
-        window.location.href = '/declaration/validation';
+        window.location.href = window.location.href.replace('/situations-particulieres', '/validation');
     }, 1200);
 }
 
@@ -107,11 +104,11 @@ function pageValidation() {
     const button = document.querySelector('#btn-valider-actu');
 
     if (checkbox) checkbox.checked = true;
-
+    
     if (button) {
         setTimeout(() => {
-            button.click();
-            localStorage.removeItem('autoActuActive');
+            // button.click();
+            // localStorage.removeItem('autoActuActive');
 
             setTimeout(() => {
                 alert("Votre actualisation a bien été effectuée avec succès !");
