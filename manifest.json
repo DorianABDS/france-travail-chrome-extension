@@ -1,27 +1,22 @@
 {
   "manifest_version": 3,
-  "name": "Extension France Travail réinscription automatique",
+  "name": "Auto-actualisation France Travail",
   "version": "1.0",
-  "description": "Ajoute un bouton de réinscription automatique sur la page, avec confirmation après actualisation.",
+  "description": "Ajoute un bouton pour automatiser l'actualisation sur France Travail.",
   "icons": {
-    "128": "icons/franceTravail.png"
+    "128": "icons/franceTravail.webp"
   },
-  "permissions": [
-    "storage",
-    "tabs",
-    "scripting"
-  ],
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
+      "matches": ["https://*.francetravail.fr/*"],
       "js": ["content.js"],
-      "css": ["styles.css"],
       "run_at": "document_idle"
     }
   ],
-  "action": {
-    "default_icon": {
-      "128": "icons/franceTravail.png"
+  "web_accessible_resources": [
+    {
+      "resources": ["styles.css", "icons/actu-auto.svg"],
+      "matches": ["https://*.francetravail.fr/*"]
     }
-  }
+  ]
 }
