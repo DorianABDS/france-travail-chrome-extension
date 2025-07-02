@@ -101,15 +101,16 @@ function pageSpecialSituations() {
 
 // Étape 3 : coche "oui" et finalise l'actualisation
 function pageValidation() {
-    const checkbox = document.querySelector('#question-maintienInscription-oui');
-    const button = document.querySelector('#btn-valider-actu');
+    const interval = setInterval(() => {
+        const checkbox = document.querySelector('#question-maintienInscription-oui');
+        const button = document.querySelector('#btn-valider-actu');
 
-    if (checkbox) checkbox.checked = true;
-    
-    if (button) {
-        setTimeout(() => {
-            // button.click();
-            // localStorage.removeItem('autoActuActive');
+        if (checkbox && button) {
+            checkbox.checked = true;
+            button.click();
+            clearInterval(interval);
+
+            localStorage.removeItem('autoActuActive');
 
             const autoBtn = document.getElementById('btn-automatic-update');
             if (autoBtn) autoBtn.remove();
@@ -117,8 +118,7 @@ function pageValidation() {
             setTimeout(() => {
                 alert("Votre actualisation a bien été effectuée avec succès !");
             }, 1000);
-        }, 600);
-    } else {
-        console.warn("Bouton de validation non trouvé !");
-    }
+        }
+    }, 200);
 }
+
