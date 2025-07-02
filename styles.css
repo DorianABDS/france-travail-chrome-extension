@@ -7,7 +7,7 @@
     align-items: center;
     gap: 8px;
     padding: 10px 16px;
-    background-color: #2563eb;
+    background-color: #283276;
     color: white;
     border: none;
     border-radius: 8px;
@@ -19,7 +19,11 @@
 }
 
 .btn-auto-update:hover {
-    background-color: #1d4ed8;
+    background-color: #1b2256;
+}
+
+.btn-auto-update:focus {
+    background-color: #0f1438;
 }
 
 .icon-auto-update {
@@ -32,7 +36,7 @@
     top: 20px;
     right: 20px;
     padding: 12px 20px;
-    background-color: #007bff;
+    background-color: #283276;
     color: #fff;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
