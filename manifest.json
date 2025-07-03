@@ -4,7 +4,9 @@
   "version": "1.0",
   "description": "Ajoute un bouton pour automatiser l'actualisation sur France Travail.",
   "icons": {
-    "franceTravail": "assets/icons/franceTravail.webp"
+    "16": "assets/icons/franceTravail.webp",
+    "48": "assets/icons/franceTravail.webp",
+    "128": "assets/icons/franceTravail.webp"
   },
   "content_scripts": [
     {
@@ -15,6 +17,7 @@
   ],
   "web_accessible_resources": [
     {
+      "resources": ["/assets/style/styles.css", "assets/icons/franceTravail.webp"],
       "matches": ["https://*.francetravail.fr/*"]
     }
   ]
