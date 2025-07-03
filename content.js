@@ -5,7 +5,7 @@ function injectCssIfNeeded() {
         style.id = 'auto-update-style';
         style.rel = 'stylesheet';
         style.type = 'text/css';
-        style.href = chrome.runtime.getURL('styles.css');
+        style.href = chrome.runtime.getURL('/assets/style/styles.css');
         document.head.appendChild(style);
     }
 }
