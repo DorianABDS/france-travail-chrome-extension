@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.1.1](https://github.com/DorianABDS/france-travail-chrome-extension/compare/v1.1.0...v1.1.1) (2025-07-06)
+
+
+### Bug Fixes
+
+* remove unnecessary test CI line from README.md ([e38b0e1](https://github.com/DorianABDS/france-travail-chrome-extension/commit/e38b0e146c1d1eadfacc441069748eebe433e801))
+* update release workflow to commit version bump and changelog before pushing tags ([4515614](https://github.com/DorianABDS/france-travail-chrome-extension/commit/4515614d71b5d36be7a6af3a32f928a8225e31a7))
+* update release workflow to trigger on feat/automatisation-tag-release branch ([5ac4df4](https://github.com/DorianABDS/france-travail-chrome-extension/commit/5ac4df4bf22cc3c98ec59b5228d45753dd4d83dc))
+* update release workflow to trigger on push to main and streamline Git configuration ([c320e59](https://github.com/DorianABDS/france-travail-chrome-extension/commit/c320e59cfb968374b997456835009c5f3ba8a70d))
+
 ## [1.1.0](https://github.com/DorianABDS/france-travail-chrome-extension/compare/v1.0.0...v1.1.0) (2025-07-06)
 
 
