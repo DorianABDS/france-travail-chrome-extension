@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Auto-actualisation France Travail",
-  "version": "1.0",
+  "version": "1.1.0",
   "description": "Ajoute un bouton pour automatiser l'actualisation sur France Travail.",
   "icons": {
     "16": "assets/icons/franceTravail.webp",
@@ -10,15 +10,24 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://*.francetravail.fr/*"],
-      "js": ["content.js"],
+      "matches": [
+        "https://*.francetravail.fr/*"
+      ],
+      "js": [
+        "content.js"
+      ],
       "run_at": "document_idle"
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": ["/assets/style/styles.css", "assets/icons/franceTravail.webp"],
-      "matches": ["https://*.francetravail.fr/*"]
+      "resources": [
+        "/assets/style/styles.css",
+        "assets/icons/franceTravail.webp"
+      ],
+      "matches": [
+        "https://*.francetravail.fr/*"
+      ]
     }
   ]
 }
