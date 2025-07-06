@@ -21,16 +21,14 @@ jobs:
 
       - run: npm install
 
+      - name: Configure Git for release commit
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
       - run: npm run release
 
-      - name: Commit version bump and changelog
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add package.json CHANGELOG.md manifest.json
-          git diff --cached --quiet || (git commit -m "chore(release): bump version [skip ci]" && git push origin feat/automatisation-tag-release)
-
-      - run: git push origin --tags
+      - run: git push origin feat/automatisation-tag-release --tags
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
