@@ -26,7 +26,12 @@ jobs:
 
       - run: npm run release
 
-      - run: git push origin main --follow-tags
+      - name: Commit version bump and changelog
+        run: |
+          git add package.json CHANGELOG.md manifest.json
+          git diff --cached --quiet || (git commit -m "chore(release): bump version [skip ci]" && git push origin main)
+
+      - run: git push origin --tags
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
