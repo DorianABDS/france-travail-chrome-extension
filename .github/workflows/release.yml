@@ -18,11 +18,15 @@ jobs:
           node-version: 20
 
       - name: Skip if tag already exists
+        id: check_tag
         run: |
           TAG="v$(node -p "require('./package.json').version")"
+          echo "TAG=$TAG" >> $GITHUB_OUTPUT
           if git rev-parse "$TAG" >/dev/null 2>&1; then
             echo "Tag $TAG already exists, skipping release."
-            exit 0
+            echo "SKIP=true" >> $GITHUB_OUTPUT
+          else
+            echo "SKIP=false" >> $GITHUB_OUTPUT
           fi
 
       - run: npm ci
@@ -32,18 +36,25 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-      - run: npm run release
+      - name: Run release
+        if: steps.check_tag.outputs.SKIP == 'false'
+        run: npm run release
 
       - name: Commit version bump and changelog
+        if: steps.check_tag.outputs.SKIP == 'false'
         run: |
-          git add package.json CHANGELOG.md manifest.json
+          git add package.json package-lock.json CHANGELOG.md manifest.json
           git diff --cached --quiet || (git commit -m "chore(release): bump version [skip ci]" && git push origin main)
 
-      - run: git push origin --tags
+      - name: Push tags
+        if: steps.check_tag.outputs.SKIP == 'false'
+        run: git push origin --tags
 
       - name: Create GitHub Release
+        if: steps.check_tag.outputs.SKIP == 'false'
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.check_tag.outputs.TAG }}
           body_path: CHANGELOG.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
