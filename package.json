@@ -1,6 +1,7 @@
 {
   "name": "auto-actualisation-france-travail",
   "version": "1.1.0",
+  "type": "module",
   "devDependencies": {
     "@eslint/js": "^9.30.1",
     "eslint": "^9.30.1",
@@ -9,6 +10,6 @@
   },
   "scripts": {
     "lint": "eslint .",
-    "release": "standard-version && node sync-version.js"
+    "release": "standard-version && node assets/script/sync-version.js"
   }
 }
