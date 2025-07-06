@@ -24,5 +24,3 @@ Cette extension Chrome ajoute un **bouton d'auto-actualisation intelligente** su
 1. Clone ce dépôt ou télécharge le zip :
    ```bash
    git clone https://github.com/tonpseudo/auto-actualisation-france-travail.git
-
-test CI
