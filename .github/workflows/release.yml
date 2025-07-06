@@ -1,9 +1,9 @@
-name: Release on merge to main
+name: Release on push to main
 
 on:
   push:
     branches:
-      - feat/automatisation-tag-release
+      - main
 
 jobs:
   release:
@@ -11,24 +11,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
 
       - run: npm install
 
-      - name: Configure Git for release commit
+      - name: Configure Git user
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
       - run: npm run release
 
-      - run: git push origin feat/automatisation-tag-release --tags
+      - run: git push origin main --follow-tags
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
