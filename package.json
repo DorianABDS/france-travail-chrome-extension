@@ -1,6 +1,6 @@
 {
   "name": "auto-actualisation-france-travail",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "type": "module",
   "devDependencies": {
     "@eslint/js": "^9.30.1",
