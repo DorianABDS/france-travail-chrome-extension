@@ -17,6 +17,14 @@ jobs:
         with:
           node-version: 20
 
+      - name: Skip if tag already exists
+        run: |
+          TAG="v$(node -p "require('./package.json').version")"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists, skipping release."
+            exit 0
+          fi
+
       - run: npm ci
 
       - name: Configure Git user
