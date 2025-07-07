@@ -2,7 +2,8 @@
 
 ![GitHub Release (latest by semver)](https://img.shields.io/github/v/release/DorianABDS/france-travail-chrome-extension)
 ![License](https://img.shields.io/github/license/DorianABDS/france-travail-chrome-extension)
-![Chrome Web Store](https://img.shields.io/chrome-web-store/v/nheggicfofogaeahlempbhgfefbpokbh)
+[![Extension Chrome](https://img.shields.io/badge/Chrome%20Web%20Store-Visiter%20l'extension-blue?logo=google-chrome)](https://chrome.google.com/webstore/detail/nheggicfofogaeahlempbhgfefbpokbh)
+
 
 
 Cette extension Chrome ajoute un **bouton d'auto-actualisation intelligente** sur le site [France Travail](https://www.francetravail.fr), permettant aux utilisateurs de lancer automatiquement le processus d’actualisation mensuelle sans intervention manuelle.
