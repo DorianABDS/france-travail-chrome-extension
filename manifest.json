@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Auto-actualisation France Travail",
   "version": "1.2.0",
-  "description": "Ajoute un bouton pour automatiser l'actualisation sur France Travail.",
+  "description": "Actualisez votre situation sur France Travail automatiquement chaque mois, en un clic, grâce à un bouton intégré.",
   "icons": {
     "16": "assets/icons/franceTravail.webp",
     "48": "assets/icons/franceTravail.webp",
