@@ -76,6 +76,34 @@ h2 { margin: 0 0 8px; font-size: 13px; font-weight: 600; }
 
 .hint { margin: 8px 0 14px; font-size: 12px; color: var(--muted); }
 
+/* Compte à rebours jusqu'à la prochaine actualisation (hors période ou une fois validée). */
+.countdown {
+    display: grid;
+    justify-items: center;
+    gap: 2px;
+    margin: 0 0 16px;
+    padding: 14px 12px;
+    border-radius: 8px;
+    background: var(--info-bg);
+    color: var(--ft-blue);
+    text-align: center;
+}
+.countdown strong { font-size: 34px; line-height: 1.1; font-weight: 700; }
+.countdown span { font-size: 13px; font-weight: 600; }
+.countdown .when { font-weight: 400; color: var(--muted); font-size: 12px; }
+
+/* « Rester inscrit » : toujours Oui, affiché verrouillé. */
+.row.fixed { color: var(--muted); }
+.locked {
+    padding: 2px 10px;
+    border-radius: 6px;
+    background: var(--info-bg);
+    color: var(--ft-blue);
+    font-weight: 600;
+    white-space: nowrap;
+}
+.primary[hidden] { display: none; }
+
 button { font: inherit; cursor: pointer; }
 
 .primary {

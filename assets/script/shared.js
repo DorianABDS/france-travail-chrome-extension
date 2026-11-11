@@ -74,10 +74,29 @@
         return Object.fromEntries(QUESTIONS.map((q) => [q.key, q.default]));
     }
 
-    // Période d'actualisation : du 28 du mois M au 15 du mois M+1, pour le mois M.
-    // Renvoie { open, key: 'AAAA-MM', label, deadline } ou { open: false, nextOpen }.
-    function currentPeriod(now = new Date()) {
+    // Date du jour. Le banc de test peut la simuler via `__FT_NOW__` (sans effet dans l'extension,
+    // dont les scripts tournent dans un monde isolé de la page).
+    function today() {
+        return globalThis.__FT_NOW__ ? new Date(globalThis.__FT_NOW__) : new Date();
+    }
+
+    // Nombre de jours calendaires de `a` à `b`.
+    function daysBetween(a, b) {
+        const day = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        return Math.round((day(b) - day(a)) / 86400000);
+    }
+
+    // Période d'actualisation : du 28 du mois M au 15 du mois M+1, pour le mois M. Le 28 est la date
+    // habituelle ; France Travail la décale parfois (jours fériés, février).
+    // Renvoie { open, key: 'AAAA-MM', label, deadline, daysLeft, next } ou { open: false, next },
+    // `next` décrivant la prochaine ouverture : { date: '28 novembre', month: 'novembre', days }.
+    function currentPeriod(now = today()) {
         const day = now.getDate();
+        const nextStart = day >= 28
+            ? new Date(now.getFullYear(), now.getMonth() + 1, 28)
+            : new Date(now.getFullYear(), now.getMonth(), 28);
+        const next = { date: `28 ${MONTHS[nextStart.getMonth()]}`, month: MONTHS[nextStart.getMonth()], days: daysBetween(now, nextStart) };
+
         if (day >= 28 || day <= 15) {
             const ref = day >= 28
                 ? new Date(now.getFullYear(), now.getMonth(), 1)
@@ -88,9 +107,15 @@
                 key: `${ref.getFullYear()}-${String(ref.getMonth() + 1).padStart(2, '0')}`,
                 label: MONTHS[ref.getMonth()],
                 deadline: `15 ${MONTHS[deadline.getMonth()]}`,
+                daysLeft: daysBetween(now, deadline),
+                next,
             };
         }
-        return { open: false, nextOpen: `28 ${MONTHS[now.getMonth()]}` };
+        return { open: false, next };
+    }
+
+    function plural(n, word) {
+        return `${n} ${word}${n > 1 ? 's' : ''}`;
     }
 
     function formatDate(iso) {
@@ -133,34 +158,63 @@
     // Marque l'actualisation de la période comme faite. `source` : extension | site | manual.
     async function markDone(source, extra = {}) {
         const period = currentPeriod();
-        await chrome.storage.local.set({ lastDone: { date: new Date().toISOString(), period: period.key || null, source, ...extra } });
+        await chrome.storage.local.set({ lastDone: { date: today().toISOString(), period: period.key || null, source, ...extra } });
     }
 
     // Statut affiché en tête de la popup et du panneau sur le site.
     // `state` : running | error | off | done | pending | todo.
+    // `action` : libellé du bouton principal (absent quand il n'y a rien à lancer).
+    // `next` : prochaine ouverture, pour le compte à rebours (hors période ou une fois validée).
+    // `answersFor` : mois auquel s'appliquent les réponses affichées.
     function statusInfo(run, lastDone, siteStatus) {
         const period = currentPeriod();
         if (run.status === 'running') {
-            return { state: 'running', tone: 'info', text: 'Actualisation en cours dans un onglet France Travail.', action: "Voir l'actualisation" };
+            return { state: 'running', tone: 'info', text: 'Actualisation en cours dans un onglet France Travail.', action: "Voir l'actualisation", answersFor: period.label };
         }
         if (run.status === 'error') {
-            return { state: 'error', tone: 'danger', text: run.message || 'La dernière tentative a échoué.', action: 'Réessayer' };
+            return { state: 'error', tone: 'danger', text: run.message || 'La dernière tentative a échoué.', action: 'Réessayer', answersFor: period.label };
         }
         if (!period.open) {
-            return { state: 'off', tone: 'neutral', text: `Pas d'actualisation en ce moment. Prochaine ouverture le ${period.nextOpen}.`, action: "Lancer l'actualisation", disabled: true };
+            return { state: 'off', tone: 'info', text: "Tout est bon : rien à faire pour l'instant.", next: period.next, answersFor: period.next.month };
         }
         if (lastDone?.period === period.key) {
             const text = lastDone.source === 'site'
-                ? `Actualisation ${deMois(period.label)} validée${lastDone.siteDate ? ` le ${lastDone.siteDate}` : ''}, d'après votre espace France Travail.`
+                ? `Actualisation ${deMois(period.label)} validée${lastDone.siteDate ? ` le ${lastDone.siteDate}` : ''}, d'après votre espace France Travail. Tout est bon.`
                 : lastDone.source === 'manual'
-                    ? `Actualisation ${deMois(period.label)} indiquée comme faite.`
-                    : `Actualisation ${deMois(period.label)} faite le ${formatDate(lastDone.date)}.`;
-            return { state: 'done', tone: 'success', text, action: 'Relancer quand même' };
+                    ? `Actualisation ${deMois(period.label)} indiquée comme faite. Tout est bon.`
+                    : `Actualisation ${deMois(period.label)} faite le ${formatDate(lastDone.date)}. Tout est bon.`;
+            return { state: 'done', tone: 'success', text, next: period.next, answersFor: period.next.month };
         }
         if (siteStatus?.period === period.key) {
-            return { state: 'pending', tone: 'warning', text: `Actualisation ${deMois(period.label)} : « ${siteStatus.label} » sur votre espace France Travail.`, action: "Lancer l'actualisation" };
+            return { state: 'pending', tone: 'info', text: `Actualisation ${deMois(period.label)} : « ${siteStatus.label} » sur votre espace France Travail.`, action: "Lancer l'actualisation", answersFor: period.label };
         }
-        return { state: 'todo', tone: 'danger', text: `Actualisation ${deMois(period.label)} à faire, avant le ${period.deadline}.`, action: "Lancer l'actualisation", canMarkDone: true };
+        // Dans les 3 derniers jours, le bandeau passe au rouge.
+        const left = period.daysLeft === 0 ? "C'est le dernier jour." : `Il vous reste ${plural(period.daysLeft, 'jour')}.`;
+        return {
+            state: 'todo',
+            tone: period.daysLeft <= 3 ? 'danger' : 'warning',
+            text: `Actualisation ${deMois(period.label)} à faire avant le ${period.deadline}. ${left}`,
+            action: "Lancer l'actualisation",
+            canMarkDone: true,
+            answersFor: period.label,
+        };
+    }
+
+    // Bloc compte à rebours jusqu'à la prochaine ouverture (null s'il n'y a pas lieu d'en afficher).
+    function buildCountdown(info) {
+        if (!info.next) return null;
+        const { days, date } = info.next;
+        const box = document.createElement('div');
+        box.className = 'countdown';
+        const count = document.createElement('strong');
+        count.textContent = days;
+        const what = document.createElement('span');
+        what.textContent = `${days > 1 ? 'jours' : 'jour'} avant la prochaine actualisation`;
+        const when = document.createElement('span');
+        when.className = 'when';
+        when.textContent = `À partir du ${date} (date habituelle)`;
+        box.append(count, what, when);
+        return box;
     }
 
     // Lignes « question + Non/Oui » ; chaque changement est enregistré directement.
@@ -186,7 +240,22 @@
             }
             row.append(legend, toggle);
             return row;
-        });
+        }).concat(stayRegisteredRow());
+    }
+
+    // « Rester inscrit » : toujours « Oui », c'est le but de l'actualisation. Affiché verrouillé
+    // pour que l'utilisateur voie ce qui sera répondu.
+    function stayRegisteredRow() {
+        const row = document.createElement('div');
+        row.className = 'row fixed';
+        const label = document.createElement('span');
+        label.textContent = 'Rester inscrit ?';
+        const value = document.createElement('span');
+        value.className = 'locked';
+        value.title = "Toujours « Oui » : c'est ce qui maintient votre inscription à France Travail.";
+        value.textContent = 'Oui, toujours';
+        row.append(label, value);
+        return row;
     }
 
     async function startRun() {
@@ -205,6 +274,7 @@
 
     globalThis.FT = {
         MONTHS, QUESTIONS, STEPS, START_URL, RUN_TTL_MS,
-        defaultAnswers, currentPeriod, formatDate, sameMonth, monthAfterMoisDe, deMois, getState, markDone, statusInfo, buildQuestions, startRun, exportDiagnostic,
+        defaultAnswers, today, currentPeriod, formatDate, sameMonth, monthAfterMoisDe, deMois, getState, markDone, statusInfo,
+        buildCountdown, buildQuestions, startRun, exportDiagnostic,
     };
 })();

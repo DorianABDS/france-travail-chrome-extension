@@ -163,6 +163,11 @@ p:last-child { margin-bottom: 0; }
     line-height: 16px;
     text-align: center;
 }
+.badge svg { display: block; margin: 2px auto 0; }
+/* Pastilles blanches sur les fonds vert et orange : coche ou horloge de la couleur du fond. */
+.fab.done .badge { background: #fff; color: #18753c; border-color: #18753c; }
+.fab.pending .badge { background: #fff; color: #b34000; border-color: #b34000; }
+
 /* États : vert = actualisation faite, orange = statut « en attente » lu sur le site. */
 .fab.done { background: #18753c; box-shadow: 0 6px 18px rgba(24, 117, 60, 0.35), 0 2px 6px rgba(0, 0, 0, 0.12); }
 .fab.done:hover { background: #125c2f; }
@@ -213,6 +218,33 @@ h2 { margin: 0 0 8px; font-size: 13px; font-weight: 600; }
 .toggle input:focus-visible + label { outline: 2px solid var(--ft-blue); outline-offset: 2px; }
 
 .sheet .hint { margin: 8px 0 14px; font-size: 12px; }
+
+/* Compte à rebours jusqu'à la prochaine actualisation (hors période ou une fois validée). */
+.countdown {
+    display: grid;
+    justify-items: center;
+    gap: 2px;
+    margin: 0 0 16px;
+    padding: 14px 12px;
+    border-radius: 8px;
+    background: var(--info-bg);
+    color: var(--ft-blue);
+    text-align: center;
+}
+.countdown strong { font-size: 34px; line-height: 1.1; font-weight: 700; }
+.countdown span { font-size: 13px; font-weight: 600; }
+.countdown .when { font-weight: 400; color: var(--muted); font-size: 12px; }
+
+/* « Rester inscrit » : toujours Oui, affiché verrouillé. */
+.row.fixed { color: var(--muted); }
+.locked {
+    padding: 2px 10px;
+    border-radius: 6px;
+    background: var(--info-bg);
+    color: var(--ft-blue);
+    font-weight: 600;
+    white-space: nowrap;
+}
 .sheet > .btn.primary { display: block; box-sizing: border-box; width: 100%; padding: 10px; text-align: center; font-size: 14px; font-weight: 600; }
 .btn:disabled { cursor: default; opacity: 0.45; }
 

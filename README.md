@@ -11,7 +11,9 @@ Extension Chrome qui remplit et valide l'actualisation mensuelle sur [France Tra
 ## Fonctionnalités
 
 - **Statut lu sur votre espace personnel** : l'extension lit le bloc « Mon actualisation » de `candidat.francetravail.fr/espacepersonnel/`. Un statut « Validée » pour le mois en cours compte comme fait, même si vous vous êtes actualisé sans l'extension. Un lien « J'ai déjà fait mon actualisation » sert de secours.
-- **Bouton rond sur le site France Travail** (en bas à droite) : bleu marine avec pastille rouge et halo pulsé tant que l'actualisation reste à faire, orange si le site l'indique en cours de traitement, vert avec une coche une fois validée. Un clic ouvre le panneau : statut du mois, réglage de vos réponses, bouton « Lancer l'actualisation ». Sur une page d'actualisation, le panneau s'ouvre de lui-même si c'est à faire.
+- **Bouton rond sur le site France Travail** (en bas à droite), toujours avec le logo flèche : bleu marine avec pastille « ! » et halo pulsé tant que l'actualisation reste à faire, orange avec une horloge si le site l'indique en cours de traitement, vert avec une coche une fois validée, bleu marine simple hors période.
+- **Comptes à rebours** : jours restants avant la date limite (bandeau rouge dans les 3 derniers jours), et jours avant la prochaine ouverture hors période ou une fois validée (le 28, date habituelle).
+- **« Rester inscrit »** est toujours répondu « Oui » ; la ligne est affichée verrouillée dans la popup et le panneau. Un clic ouvre le panneau : statut du mois, réglage de vos réponses, bouton « Lancer l'actualisation ». Sur une page d'actualisation, le panneau s'ouvre de lui-même si c'est à faire.
 - **Popup** (clic sur l'icône de l'extension) : le même panneau, accessible depuis n'importe quel site.
 - **Badge sur l'icône** quand l'actualisation du mois reste à faire, ou en cas d'erreur.
 - **Panneau de progression** sur le site : étape en cours, succès, ou erreur expliquée.
@@ -60,7 +62,7 @@ Banc de test local (fausse actualisation en 3 pages, faux `chrome.*`) :
 powershell -ExecutionPolicy Bypass -File test/serve.ps1
 ```
 
-Puis ouvrez `http://localhost:8765/` (moteur) ou `http://localhost:8765/test/popup-preview.html` (popup). L'URL `/declaration/activites?casse` simule un site dont un intitulé a changé.
+Puis ouvrez `http://localhost:8765/` (moteur) ou `http://localhost:8765/test/popup-preview.html` (popup). L'URL `/declaration/activites?casse` simule un site dont un intitulé a changé, et `/espacepersonnel/?statut=valide|attente|afaire&mois=Octobre` le bloc « Mon actualisation ». Pour simuler une autre date, dans la console : `localStorage.ftNow = '2026-11-20'`.
 
 ```bash
 npm ci

@@ -1,6 +1,9 @@
 // Faux `chrome.*` minimal pour tester content.js hors extension (stockage dans localStorage).
 (function () {
     const KEY = 'mockChromeStorage';
+
+    // Date du jour simulée : localStorage.ftNow = '2026-11-20' (voir FT.today()).
+    if (localStorage.getItem('ftNow')) window.__FT_NOW__ = localStorage.getItem('ftNow');
     const listeners = [];
     const read = () => JSON.parse(localStorage.getItem(KEY) || '{}');
 

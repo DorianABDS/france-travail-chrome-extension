@@ -1,7 +1,7 @@
 // Content script : moteur d'actualisation + panneau de progression affiché sur le site.
 // Dépend de shared.js (objet global FT), chargé avant lui.
 (function () {
-    const { STEPS, QUESTIONS, RUN_TTL_MS, currentPeriod, formatDate, sameMonth, monthAfterMoisDe, getState, markDone, statusInfo, buildQuestions, startRun, exportDiagnostic } = FT;
+    const { STEPS, QUESTIONS, RUN_TTL_MS, currentPeriod, formatDate, sameMonth, monthAfterMoisDe, getState, markDone, statusInfo, buildCountdown, buildQuestions, startRun, exportDiagnostic } = FT;
 
     const CHOICE_SELECTOR = 'input[type=radio], input[type=checkbox], [role=radio], [role=checkbox]';
     const SUBMIT_WAIT_MS = 15000;
@@ -313,8 +313,9 @@
     let lastRender = '';
 
     const ICON = '<svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>';
-    const ICON_CHECK = '<svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
-    const ICON_CLOCK = '<svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>';
+    // Petites icônes des pastilles d'angle (l'état ne repose pas que sur la couleur).
+    const MINI_CHECK = '<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    const MINI_CLOCK = '<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>';
 
     function h(tag, attrs = {}, ...children) {
         const el = document.createElement(tag);
@@ -360,8 +361,9 @@
             h('div', { class: 'bar' }, h('div', { style: `width:${Math.round((done / STEPS.length) * 100)}%` })));
     }
 
-    // Bouton rond toujours visible, coloré selon l'état : vert (faite), orange (en attente sur le site),
-    // bleu marine avec pastille rouge et halo (à faire), bleu marine simple (hors période).
+    // Bouton rond toujours visible avec le logo flèche ; seul le fond change selon l'état :
+    // vert (faite), orange (en attente sur le site), bleu marine (à faire ou hors période).
+    // Une pastille d'angle double la couleur : « ! » à faire, coche faite, horloge en attente.
     function fab(info) {
         const el = h('button', {
             class: `fab ${info.state}`,
@@ -369,25 +371,31 @@
             'aria-label': `Actualisation France Travail. ${info.text}`,
             onclick: () => { sheetOpen = true; focusOnRender = 'close'; render(); },
         });
-        el.insertAdjacentHTML('afterbegin', info.state === 'done' ? ICON_CHECK : info.state === 'pending' ? ICON_CLOCK : ICON);
+        el.insertAdjacentHTML('afterbegin', ICON);
         if (info.state === 'todo' || info.state === 'error') el.append(h('span', { class: 'badge', 'aria-hidden': 'true' }, '!'));
+        const mini = { done: MINI_CHECK, pending: MINI_CLOCK }[info.state];
+        if (mini) {
+            const badge = h('span', { class: 'badge', 'aria-hidden': 'true' });
+            badge.innerHTML = mini;
+            el.append(badge);
+        }
         return el;
     }
 
     // Panneau de réglages ouvert depuis le bouton rond : même contenu que la popup de l'extension.
     function sheet(info, answers, lastDone) {
-        const start = button(info.action, async () => {
+        const start = info.action && button(info.action, async () => {
             await startRun();
             closeSheet();
         }, true);
-        if (info.disabled) start.disabled = true;
 
         return h('section', { class: 'card sheet', role: 'dialog', 'aria-label': 'Actualisation France Travail' },
             h('header', {},
                 h('span', { class: 'title' }, 'Actualisation France Travail'),
                 h('button', { id: 'close', class: 'close', 'aria-label': 'Fermer', onclick: closeSheet }, '×')),
             h('div', { class: `status ${info.tone}`, role: 'status' }, info.text),
-            h('h2', {}, 'Vos réponses ce mois-ci'),
+            buildCountdown(info),
+            h('h2', {}, `Vos réponses pour ${info.answersFor}`),
             h('div', { class: 'questions' }, ...buildQuestions(answers)),
             h('p', { class: 'hint' }, "Si vous répondez « Oui », l'extension vous laisse remplir cette partie vous-même."),
             start,

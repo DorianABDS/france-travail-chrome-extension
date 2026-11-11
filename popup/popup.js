@@ -1,5 +1,5 @@
 // Popup : réglage des réponses, statut du mois et lancement de l'actualisation.
-const { START_URL, formatDate, getState, markDone, statusInfo, buildQuestions, startRun, exportDiagnostic } = FT;
+const { START_URL, formatDate, getState, markDone, statusInfo, buildCountdown, buildQuestions, startRun, exportDiagnostic } = FT;
 
 const $ = (id) => document.getElementById(id);
 
@@ -9,8 +9,11 @@ async function render() {
 
     $('status').className = `status ${info.tone}`;
     $('status').textContent = info.text;
-    $('start').textContent = info.action;
-    $('start').disabled = !!info.disabled;
+    $('countdown').replaceChildren(...[buildCountdown(info)].filter(Boolean));
+    $('answers-title').textContent = `Vos réponses pour ${info.answersFor}`;
+    // Rien à lancer hors période ou une fois validée : le compte à rebours remplace le bouton.
+    $('start').hidden = !info.action;
+    $('start').textContent = info.action || '';
     $('mark-done').hidden = !info.canMarkDone;
     $('last').textContent = lastDone ? `Dernière : ${formatDate(lastDone.date)}` : '';
     $('questions').replaceChildren(...buildQuestions(answers));
