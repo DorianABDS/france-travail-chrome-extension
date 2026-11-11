@@ -163,7 +163,13 @@ p:last-child { margin-bottom: 0; }
     line-height: 16px;
     text-align: center;
 }
-.fab.done .badge { background: #1f7a4d; }
+/* États : vert = actualisation faite, orange = statut « en attente » lu sur le site. */
+.fab.done { background: #18753c; box-shadow: 0 6px 18px rgba(24, 117, 60, 0.35), 0 2px 6px rgba(0, 0, 0, 0.12); }
+.fab.done:hover { background: #125c2f; }
+.fab.done:active { background: #0d4322; }
+.fab.pending { background: #b34000; box-shadow: 0 6px 18px rgba(179, 64, 0, 0.35), 0 2px 6px rgba(0, 0, 0, 0.12); }
+.fab.pending:hover { background: #8f3300; }
+.fab.pending:active { background: #6b2600; }
 
 /* ---------- Panneau de réglages (mêmes éléments que la popup) ---------- */
 
@@ -221,6 +227,7 @@ footer {
 
 .link { all: unset; cursor: pointer; font-size: 12px; color: var(--muted); text-decoration: underline; }
 .link:hover { color: var(--text); }
+.link.center { display: block; margin: 10px auto 0; }
 .link:focus-visible { outline: 2px solid var(--ft-blue); outline-offset: 2px; }
 
 @keyframes spin { to { transform: rotate(360deg); } }

@@ -66,7 +66,23 @@
         } else if (path.endsWith('/confirmation')) {
             app.innerHTML = '<h1>Merci</h1><p>Votre actualisation a bien été enregistrée.</p>';
         } else {
-            app.innerHTML = '<h1>Espace personnel</h1><a href="/declaration/activites">M\'actualiser</a>';
+            // Copie du bloc « Mon actualisation » de candidat.francetravail.fr/espacepersonnel/.
+            // ?statut=valide|attente|afaire (défaut : afaire) et ?mois=Octobre.
+            const params = new URLSearchParams(location.search);
+            const statut = params.get('statut') || 'afaire';
+            const mois = params.get('mois') || 'Octobre';
+            const badge = {
+                valide: ['status-success', 'Validée', `Actualisation validée le 11/11/2026 pour le mois de ${mois}`],
+                attente: ['status-warning', 'En cours de traitement', `Actualisation en cours de traitement pour le mois de ${mois}`],
+                afaire: ['status-error', 'À faire', `Actualisation à faire pour le mois de ${mois}`],
+            }[statut];
+            app.innerHTML = `<h1>Espace personnel</h1>
+                <app-situation-card data-cy="situation-card-actualisation"><div class="mon-actualisation-grid">
+                    <div class="title-container"><h4>Mon actualisation</h4><p><span class="status status-sm ${badge[0]}"><span class="status-icon"></span>
+                        <span class="status-content"><span class="sr-only">Statut&nbsp;:&nbsp;</span><span>${badge[1]}</span></span></span></p></div>
+                    <div class="description-container"><p>${badge[2]}</p></div>
+                    <div class="btn-container"><a href="/declaration/activites">M'actualiser</a></div>
+                </div></app-situation-card>`;
         }
     </script>
     <script src="/test/chrome-mock.js"></script>

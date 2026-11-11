@@ -103,3 +103,5 @@ footer {
 
 .link { padding: 0; border: 0; background: none; color: var(--muted); font-size: 12px; text-decoration: underline; }
 .link:hover { color: var(--text); }
+.link.center { display: block; margin: 10px auto 0; }
+.link[hidden] { display: none; }

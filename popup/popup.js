@@ -1,16 +1,17 @@
 // Popup : réglage des réponses, statut du mois et lancement de l'actualisation.
-const { START_URL, formatDate, getState, statusInfo, buildQuestions, startRun, exportDiagnostic } = FT;
+const { START_URL, formatDate, getState, markDone, statusInfo, buildQuestions, startRun, exportDiagnostic } = FT;
 
 const $ = (id) => document.getElementById(id);
 
 async function render() {
-    const { answers, run, lastDone } = await getState();
-    const info = statusInfo(run, lastDone);
+    const { answers, run, lastDone, siteStatus } = await getState();
+    const info = statusInfo(run, lastDone, siteStatus);
 
     $('status').className = `status ${info.tone}`;
     $('status').textContent = info.text;
     $('start').textContent = info.action;
     $('start').disabled = !!info.disabled;
+    $('mark-done').hidden = !info.canMarkDone;
     $('last').textContent = lastDone ? `Dernière : ${formatDate(lastDone.date)}` : '';
     $('questions').replaceChildren(...buildQuestions(answers));
 }
@@ -26,6 +27,7 @@ $('start').addEventListener('click', async () => {
 });
 
 $('export').addEventListener('click', exportDiagnostic);
+$('mark-done').addEventListener('click', () => markDone('manual'));
 
 chrome.storage.onChanged.addListener(render);
 render();

@@ -64,7 +64,8 @@
         },
     ];
 
-    const START_URL = 'https://www.francetravail.fr/accueil/';
+    // Espace personnel : il affiche le bloc « Mon actualisation » (statut du mois) et le lien pour s'actualiser.
+    const START_URL = 'https://candidat.francetravail.fr/espacepersonnel/';
 
     // Un run plus vieux que ça est considéré comme abandonné.
     const RUN_TTL_MS = 30 * 60 * 1000;
@@ -97,18 +98,37 @@
         return `${d.getDate()} ${MONTHS[d.getMonth()]}`;
     }
 
+    // Compare des noms de mois sans tenir compte de la casse ni des accents (« Février » = « fevrier »).
+    function sameMonth(a, b) {
+        const norm = (s) => (s || '').normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
+        return norm(a) === norm(b);
+    }
+
+    // « de novembre », mais « d'octobre », « d'avril », « d'août ».
+    function deMois(month) {
+        return /^[aeiouéèêh]/i.test(month) ? `d'${month}` : `de ${month}`;
+    }
+
     async function getState() {
-        const data = await chrome.storage.local.get(['answers', 'run', 'lastDone']);
+        const data = await chrome.storage.local.get(['answers', 'run', 'lastDone', 'siteStatus']);
         return {
             answers: { ...defaultAnswers(), ...(data.answers || {}) },
             run: data.run || { status: 'idle' },
             lastDone: data.lastDone || null,
+            // Dernier statut lu dans le bloc « Mon actualisation » de l'espace personnel.
+            siteStatus: data.siteStatus || null,
         };
     }
 
+    // Marque l'actualisation de la période comme faite. `source` : extension | site | manual.
+    async function markDone(source, extra = {}) {
+        const period = currentPeriod();
+        await chrome.storage.local.set({ lastDone: { date: new Date().toISOString(), period: period.key || null, source, ...extra } });
+    }
+
     // Statut affiché en tête de la popup et du panneau sur le site.
-    // `state` : running | error | off | done | todo.
-    function statusInfo(run, lastDone) {
+    // `state` : running | error | off | done | pending | todo.
+    function statusInfo(run, lastDone, siteStatus) {
         const period = currentPeriod();
         if (run.status === 'running') {
             return { state: 'running', tone: 'info', text: 'Actualisation en cours dans un onglet France Travail.', action: "Voir l'actualisation" };
@@ -120,9 +140,17 @@
             return { state: 'off', tone: 'neutral', text: `Pas d'actualisation en ce moment. Prochaine ouverture le ${period.nextOpen}.`, action: "Lancer l'actualisation", disabled: true };
         }
         if (lastDone?.period === period.key) {
-            return { state: 'done', tone: 'success', text: `Actualisation de ${period.label} faite le ${formatDate(lastDone.date)}.`, action: 'Relancer quand même' };
+            const text = lastDone.source === 'site'
+                ? `Actualisation ${deMois(period.label)} validée${lastDone.siteDate ? ` le ${lastDone.siteDate}` : ''}, d'après votre espace France Travail.`
+                : lastDone.source === 'manual'
+                    ? `Actualisation ${deMois(period.label)} indiquée comme faite.`
+                    : `Actualisation ${deMois(period.label)} faite le ${formatDate(lastDone.date)}.`;
+            return { state: 'done', tone: 'success', text, action: 'Relancer quand même' };
         }
-        return { state: 'todo', tone: 'warning', text: `Actualisation de ${period.label} à faire, avant le ${period.deadline}.`, action: "Lancer l'actualisation" };
+        if (siteStatus?.period === period.key) {
+            return { state: 'pending', tone: 'warning', text: `Actualisation ${deMois(period.label)} : « ${siteStatus.label} » sur votre espace France Travail.`, action: "Lancer l'actualisation" };
+        }
+        return { state: 'todo', tone: 'danger', text: `Actualisation ${deMois(period.label)} à faire, avant le ${period.deadline}.`, action: "Lancer l'actualisation", canMarkDone: true };
     }
 
     // Lignes « question + Non/Oui » ; chaque changement est enregistré directement.
@@ -167,6 +195,6 @@
 
     globalThis.FT = {
         MONTHS, QUESTIONS, STEPS, START_URL, RUN_TTL_MS,
-        defaultAnswers, currentPeriod, formatDate, getState, statusInfo, buildQuestions, startRun, exportDiagnostic,
+        defaultAnswers, currentPeriod, formatDate, sameMonth, deMois, getState, markDone, statusInfo, buildQuestions, startRun, exportDiagnostic,
     };
 })();

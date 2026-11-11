@@ -2,16 +2,17 @@
 importScripts('shared.js');
 
 async function updateBadge() {
-    const { run, lastDone } = await FT.getState();
-    const period = FT.currentPeriod();
+    const { run, lastDone, siteStatus } = await FT.getState();
+    const { state } = FT.statusInfo(run, lastDone, siteStatus);
 
     let text = '';
     let color = '#283276';
-    if (run.status === 'error') {
+    if (state === 'error') {
         text = '!';
         color = '#b3261e';
-    } else if (period.open && lastDone?.period !== period.key) {
+    } else if (state === 'todo') {
         text = '1';
+        color = '#b3261e';
     }
     await chrome.action.setBadgeText({ text });
     await chrome.action.setBadgeBackgroundColor({ color });

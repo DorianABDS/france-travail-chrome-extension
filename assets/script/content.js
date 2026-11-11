@@ -1,7 +1,7 @@
 // Content script : moteur d'actualisation + panneau de progression affiché sur le site.
 // Dépend de shared.js (objet global FT), chargé avant lui.
 (function () {
-    const { STEPS, QUESTIONS, RUN_TTL_MS, currentPeriod, formatDate, getState, statusInfo, buildQuestions, startRun, exportDiagnostic } = FT;
+    const { STEPS, QUESTIONS, RUN_TTL_MS, currentPeriod, formatDate, sameMonth, getState, markDone, statusInfo, buildQuestions, startRun, exportDiagnostic } = FT;
 
     const CHOICE_SELECTOR = 'input[type=radio], input[type=checkbox], [role=radio], [role=checkbox]';
     const SUBMIT_WAIT_MS = 15000;
@@ -166,17 +166,54 @@
 
         // Si le site est une application monopage, la confirmation s'affiche ici même ;
         // sinon c'est la nouvelle page qui la détecte (voir act()).
-        if (step.final && await waitFor(isConfirmation, SUBMIT_WAIT_MS)) await markDone();
+        if (step.final && await waitFor(isConfirmation, SUBMIT_WAIT_MS)) await finishRun();
     }
 
     function isConfirmation() {
         return /(actualisation|d[ée]claration)[^.]{0,60}(enregistr|prise en compte|bien [ée]t[ée])/i.test(document.body.innerText);
     }
 
-    async function markDone() {
+    async function finishRun() {
+        await markDone('extension');
+        await setRun({ status: 'done', period: currentPeriod().label });
+    }
+
+    // Lit le bloc « Mon actualisation » de l'espace personnel (badge de statut + « pour le mois de … »).
+    // Seul un badge « succès » pour le mois de la période en cours marque l'actualisation comme faite ;
+    // un autre statut pour ce mois est affiché « en attente » ; un statut d'un autre mois est ignoré.
+    async function syncSiteStatus() {
+        const card = document.querySelector('[data-cy="situation-card-actualisation"]');
+        const badge = card?.querySelector('.status');
         const period = currentPeriod();
-        await chrome.storage.local.set({ lastDone: { date: new Date().toISOString(), period: period.key || null } });
-        await setRun({ status: 'done', period: period.label });
+        if (!badge || !period.open) return;
+
+        const label = clean([...badge.querySelectorAll('.status-content > span:not(.sr-only)')].map((e) => e.textContent).join(' '))
+            || clean(badge.textContent.replace(/statut\s*:/i, ''));
+        const text = clean(card.textContent, 500);
+        const month = text.match(/mois d[e']\s*([a-zà-ÿ]+)/i)?.[1];
+        if (!month || !sameMonth(month, period.label)) return;
+
+        const has = (...names) => names.some((n) => badge.classList.contains(`status-${n}`));
+        const kind = has('success') ? 'done'
+            : has('error', 'danger') || /[àa] faire|non (valid|fait|effectu)|retard|manquant/i.test(label) ? 'todo'
+                : has('warning', 'info') || /attente|en cours|traitement/i.test(label) ? 'pending'
+                    : null;
+        if (!kind) return;
+
+        const { lastDone, siteStatus } = await getState();
+        if (kind === 'done') {
+            if (lastDone?.period !== period.key || lastDone.source !== 'site') {
+                await markDone('site', { siteDate: text.match(/le (\d{2}\/\d{2}\/\d{4})/)?.[1] || null });
+            }
+        } else if (kind === 'pending') {
+            if (siteStatus?.period !== period.key || siteStatus.label !== label) {
+                await chrome.storage.local.set({ siteStatus: { period: period.key, label, at: new Date().toISOString() } });
+            }
+        } else if (siteStatus) {
+            // « À faire » : on oublie un ancien statut « en attente ». Une actualisation faite par
+            // l'extension reste comptée, le site pouvant mettre un peu de temps à se mettre à jour.
+            await chrome.storage.local.remove('siteStatus');
+        }
     }
 
     // Avant la première étape : tente d'ouvrir l'actualisation depuis l'espace personnel.
@@ -191,6 +228,7 @@
     }
 
     async function act() {
+        await syncSiteStatus();
         const { run, answers } = await getState();
         const step = detectStep();
 
@@ -208,7 +246,7 @@
         const finalStep = STEPS.find((s) => s.final);
         if (run.status === 'running' && run.submitted?.[finalStep.id] && step !== finalStep) {
             // Validation envoyée : on attend la confirmation sur la page d'arrivée.
-            if (await waitFor(isConfirmation, 5000)) return markDone();
+            if (await waitFor(isConfirmation, 5000)) return finishRun();
             if (Date.now() - (run.submittedAt || 0) > SUBMIT_WAIT_MS) {
                 return fail(finalStep, "Aucune confirmation détectée. Vérifiez sur la page que l'actualisation est bien enregistrée.");
             }
@@ -234,8 +272,8 @@
     }
 
     async function render() {
-        const { run, answers, lastDone } = await getState();
-        renderPanel(run, detectStep(), lastDone, answers);
+        const { run, answers, lastDone, siteStatus } = await getState();
+        renderPanel(run, detectStep(), lastDone, answers, siteStatus);
     }
 
     // ---------- Diagnostic ----------
@@ -275,6 +313,8 @@
     let lastRender = '';
 
     const ICON = '<svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>';
+    const ICON_CHECK = '<svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    const ICON_CLOCK = '<svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>';
 
     function h(tag, attrs = {}, ...children) {
         const el = document.createElement(tag);
@@ -320,7 +360,8 @@
             h('div', { class: 'bar' }, h('div', { style: `width:${Math.round((done / STEPS.length) * 100)}%` })));
     }
 
-    // Bouton rond toujours visible : pastille rouge si l'actualisation est à faire, coche si elle est faite.
+    // Bouton rond toujours visible, coloré selon l'état : vert (faite), orange (en attente sur le site),
+    // bleu marine avec pastille rouge et halo (à faire), bleu marine simple (hors période).
     function fab(info) {
         const el = h('button', {
             class: `fab ${info.state}`,
@@ -328,9 +369,8 @@
             'aria-label': `Actualisation France Travail. ${info.text}`,
             onclick: () => { sheetOpen = true; focusOnRender = 'close'; render(); },
         });
-        el.insertAdjacentHTML('afterbegin', ICON);
+        el.insertAdjacentHTML('afterbegin', info.state === 'done' ? ICON_CHECK : info.state === 'pending' ? ICON_CLOCK : ICON);
         if (info.state === 'todo' || info.state === 'error') el.append(h('span', { class: 'badge', 'aria-hidden': 'true' }, '!'));
-        if (info.state === 'done') el.append(h('span', { class: 'badge', 'aria-hidden': 'true' }, '✓'));
         return el;
     }
 
@@ -351,6 +391,7 @@
             h('div', { class: 'questions' }, ...buildQuestions(answers)),
             h('p', { class: 'hint' }, "Si vous répondez « Oui », l'extension vous laisse remplir cette partie vous-même."),
             start,
+            info.canMarkDone && h('button', { class: 'link center', onclick: () => markDone('manual') }, "J'ai déjà fait mon actualisation"),
             h('footer', {},
                 h('span', {}, lastDone ? `Dernière : ${formatDate(lastDone.date)}` : ''),
                 h('button', { class: 'link', onclick: exportDiagnostic }, 'Exporter le diagnostic')));
@@ -362,8 +403,8 @@
         render();
     }
 
-    function renderPanel(run, step, lastDone, answers) {
-        const info = statusInfo(run, lastDone);
+    function renderPanel(run, step, lastDone, answers, siteStatus) {
+        const info = statusInfo(run, lastDone, siteStatus);
         let view;
 
         // Sur une page d'actualisation, si c'est à faire, le panneau s'ouvre de lui-même (une fois).
@@ -389,7 +430,7 @@
                     button('Exporter le diagnostic', exportDiagnostic)));
         } else if (run.status === 'done') {
             view = card('success', 'Actualisation enregistrée', () => setRun({ status: 'idle' }),
-                h('p', {}, `Votre actualisation de ${run.period || 'ce mois'} est faite. Rien d'autre à faire.`));
+                h('p', {}, `Votre actualisation ${run.period ? FT.deMois(run.period) : 'du mois'} est faite. Rien d'autre à faire.`));
         } else if (sheetOpen) {
             view = sheet(info, answers, lastDone);
         } else {

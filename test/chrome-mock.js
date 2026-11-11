@@ -12,6 +12,16 @@
                     const list = typeof keys === 'string' ? [keys] : keys;
                     return Object.fromEntries(list.filter((k) => k in all).map((k) => [k, all[k]]));
                 },
+                async remove(keys) {
+                    const all = read();
+                    const changes = {};
+                    for (const k of [].concat(keys)) {
+                        changes[k] = { oldValue: all[k] };
+                        delete all[k];
+                    }
+                    localStorage.setItem(KEY, JSON.stringify(all));
+                    listeners.forEach((fn) => fn(changes, 'local'));
+                },
                 async set(items) {
                     const all = read();
                     const changes = {};
