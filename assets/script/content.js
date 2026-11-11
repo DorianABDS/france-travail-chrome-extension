@@ -328,6 +328,8 @@
     let lastRender = '';
 
     const ICON = '<svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>';
+    // Même flèche en grand et en trait fin : elle entoure le compte à rebours hors période.
+    const ICON_RING = '<svg viewBox="0 0 24 24" width="50" height="50" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>';
     // Petites icônes des pastilles d'angle (l'état ne repose pas que sur la couleur).
     const MINI_CHECK = '<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
     const MINI_CLOCK = '<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>';
@@ -387,6 +389,16 @@
             'aria-label': `Actualisation France Travail. ${info.text}`,
             onclick: () => { sheetOpen = true; focusOnRender = 'close'; render(); },
         });
+        if (info.state === 'off') {
+            // Hors période : le nombre de jours avant la prochaine ouverture, entouré de la flèche.
+            el.insertAdjacentHTML('afterbegin', ICON_RING);
+            const days = String(info.next.days);
+            const when = `${info.text} Prochaine actualisation dans ${days} jour${info.next.days > 1 ? 's' : ''} (${info.next.date}).`;
+            el.title = when;
+            el.setAttribute('aria-label', `Actualisation France Travail. ${when}`);
+            el.append(h('span', { class: days.length > 1 ? 'days two' : 'days', 'aria-hidden': 'true' }, days));
+            return el;
+        }
         el.insertAdjacentHTML('afterbegin', ICON);
         if (info.state === 'todo' || info.state === 'error') el.append(h('span', { class: 'badge', 'aria-hidden': 'true' }, '!'));
         const mini = { done: MINI_CHECK, pending: MINI_CLOCK }[info.state];
