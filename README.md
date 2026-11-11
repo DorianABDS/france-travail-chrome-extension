@@ -10,7 +10,8 @@ Extension Chrome qui remplit et valide l'actualisation mensuelle sur [France Tra
 
 ## Fonctionnalités
 
-- **Popup** (clic sur l'icône) : statut du mois (à faire / faite), réglage de vos réponses, bouton « Lancer l'actualisation ».
+- **Bouton rond sur le site France Travail** (en bas à droite) : pastille rouge et halo pulsé tant que l'actualisation du mois reste à faire, coche verte une fois faite. Un clic ouvre le panneau : statut du mois, réglage de vos réponses, bouton « Lancer l'actualisation ». Sur une page d'actualisation, le panneau s'ouvre de lui-même si c'est à faire.
+- **Popup** (clic sur l'icône de l'extension) : le même panneau, accessible depuis n'importe quel site.
 - **Badge sur l'icône** quand l'actualisation du mois reste à faire, ou en cas d'erreur.
 - **Panneau de progression** sur le site : étape en cours, succès, ou erreur expliquée.
 - **Jamais de fausse déclaration** : si vous répondez « Oui » à une question (travail, formation, arrêt maladie, pension), l'extension coche « Oui » puis vous laisse remplir les précisions. Elle reprend à l'étape suivante.

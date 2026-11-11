@@ -2,6 +2,9 @@
 :host {
     --ft-blue: #283276;
     --ft-blue-hover: #1b2256;
+    --on-blue: #ffffff;
+    --info: #283276;
+    --info-bg: #eceefa;
     --bg: #ffffff;
     --text: #1d1d21;
     --muted: #5c5f6e;
@@ -26,6 +29,9 @@
     :host {
         --ft-blue: #8f9cff;
         --ft-blue-hover: #aab4ff;
+        --on-blue: #12142b;
+        --info: #aab4ff;
+        --info-bg: #252a4d;
         --bg: #1e1f26;
         --text: #f1f1f4;
         --muted: #a9abb8;
@@ -129,9 +135,122 @@ p:last-child { margin-bottom: 0; }
     .btn.primary { color: #12142b; }
 }
 
+/* ---------- Bouton rond ---------- */
+
+.fab {
+    all: unset;
+    position: relative;
+    box-sizing: border-box;
+    display: grid;
+    place-items: center;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #283276;
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(40, 50, 118, 0.35), 0 2px 6px rgba(0, 0, 0, 0.12);
+    transition: transform 0.15s ease, background 0.15s ease;
+    animation: in 0.2s ease-out;
+}
+.fab:hover { background: #1b2256; transform: scale(1.06); }
+.fab:focus-visible { outline: 3px solid #8f9cff; outline-offset: 3px; }
+
+/* Halo qui pulse tant que l'actualisation reste à faire. */
+.fab.todo::before, .fab.error::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: #283276;
+    z-index: -1;
+    animation: pulse 2s ease-out infinite;
+}
+
+.badge {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 4px;
+    box-sizing: border-box;
+    border-radius: 10px;
+    border: 2px solid #fff;
+    background: #d1302a;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 16px;
+    text-align: center;
+}
+.fab.done .badge { background: #1f7a4d; }
+
+/* ---------- Panneau de réglages (mêmes éléments que la popup) ---------- */
+
+.sheet { width: 340px; max-height: calc(100vh - 32px); overflow-y: auto; }
+
+h2 { margin: 0 0 8px; font-size: 13px; font-weight: 600; }
+
+.status { border-radius: 8px; padding: 10px 12px; margin-bottom: 14px; font-size: 13px; }
+.status.info { background: var(--info-bg); color: var(--info); }
+.status.success { background: var(--success-bg); color: var(--success); }
+.status.warning { background: var(--warn-bg); color: var(--warn); }
+.status.danger { background: var(--danger-bg); color: var(--danger); }
+.status.neutral { background: var(--track); color: var(--muted); }
+
+.questions { border: 1px solid var(--border); border-radius: 8px; }
+
+.row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 0;
+    padding: 8px 10px;
+    border: 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+}
+.row:last-child { border-bottom: 0; }
+.row legend { float: left; padding: 0; }
+
+.toggle { display: flex; gap: 4px; flex: none; }
+.toggle input { position: absolute; opacity: 0; pointer-events: none; }
+.toggle label {
+    cursor: pointer;
+    padding: 2px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+}
+.toggle label:hover { background: var(--track); }
+.toggle input:checked + label { background: var(--ft-blue); border-color: var(--ft-blue); color: var(--on-blue); }
+.toggle input:focus-visible + label { outline: 2px solid var(--ft-blue); outline-offset: 2px; }
+
+.sheet .hint { margin: 8px 0 14px; font-size: 12px; }
+.sheet > .btn.primary { display: block; box-sizing: border-box; width: 100%; padding: 10px; text-align: center; font-size: 14px; font-weight: 600; }
+.btn:disabled { cursor: default; opacity: 0.45; }
+
+footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.link { all: unset; cursor: pointer; font-size: 12px; color: var(--muted); text-decoration: underline; }
+.link:hover { color: var(--text); }
+.link:focus-visible { outline: 2px solid var(--ft-blue); outline-offset: 2px; }
+
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes in { from { opacity: 0; transform: translateY(8px); } }
+@keyframes pulse {
+    from { transform: scale(1); opacity: 0.5; }
+    to { transform: scale(1.6); opacity: 0; }
+}
 
 @media (prefers-reduced-motion: reduce) {
-    .card, .now .dot { animation: none; }
+    .card, .fab, .now .dot, .fab::before { animation: none; }
 }

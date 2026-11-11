@@ -1,14 +1,16 @@
 // Content script : moteur d'actualisation + panneau de progression affiché sur le site.
 // Dépend de shared.js (objet global FT), chargé avant lui.
 (function () {
-    const { STEPS, QUESTIONS, RUN_TTL_MS, currentPeriod, getState } = FT;
+    const { STEPS, QUESTIONS, RUN_TTL_MS, currentPeriod, formatDate, getState, statusInfo, buildQuestions, startRun, exportDiagnostic } = FT;
 
     const CHOICE_SELECTOR = 'input[type=radio], input[type=checkbox], [role=radio], [role=checkbox]';
     const SUBMIT_WAIT_MS = 15000;
     const MAX_SUBMITS_PER_STEP = 2;
 
     let busy = false;
-    let dismissedInvite = false;
+    let sheetOpen = false;
+    let autoOpened = false;
+    let focusOnRender = null;
     let lastSnapshotPath = '';
 
     // ---------- Utilitaires DOM ----------
@@ -266,21 +268,13 @@
         await chrome.storage.local.set({ diagnostics: [...rest, snap].slice(-15) });
     }
 
-    async function exportDiagnostic() {
-        const { diagnostics = [], run } = await chrome.storage.local.get(['diagnostics', 'run']);
-        const blob = new Blob([JSON.stringify({ version: chrome.runtime.getManifest().version, run, diagnostics }, null, 2)], { type: 'application/json' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'diagnostic-actualisation.json';
-        a.click();
-        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-    }
-
     // ---------- Panneau ----------
 
     let host;
     let shadow;
     let lastRender = '';
+
+    const ICON = '<svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>';
 
     function h(tag, attrs = {}, ...children) {
         const el = document.createElement(tag);
@@ -297,6 +291,9 @@
         host = h('div', { id: 'ft-auto-actu' });
         shadow = host.attachShadow({ mode: 'open' });
         shadow.append(h('link', { rel: 'stylesheet', href: chrome.runtime.getURL('assets/style/panel.css') }));
+        shadow.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && sheetOpen) closeSheet();
+        });
         document.body.append(host);
     }
 
@@ -323,13 +320,57 @@
             h('div', { class: 'bar' }, h('div', { style: `width:${Math.round((done / STEPS.length) * 100)}%` })));
     }
 
-    async function startRun() {
-        await chrome.storage.local.set({ run: { status: 'running', startedAt: Date.now(), submitted: {} } });
+    // Bouton rond toujours visible : pastille rouge si l'actualisation est à faire, coche si elle est faite.
+    function fab(info) {
+        const el = h('button', {
+            class: `fab ${info.state}`,
+            title: info.text,
+            'aria-label': `Actualisation France Travail. ${info.text}`,
+            onclick: () => { sheetOpen = true; focusOnRender = 'close'; render(); },
+        });
+        el.insertAdjacentHTML('afterbegin', ICON);
+        if (info.state === 'todo' || info.state === 'error') el.append(h('span', { class: 'badge', 'aria-hidden': 'true' }, '!'));
+        if (info.state === 'done') el.append(h('span', { class: 'badge', 'aria-hidden': 'true' }, '✓'));
+        return el;
+    }
+
+    // Panneau de réglages ouvert depuis le bouton rond : même contenu que la popup de l'extension.
+    function sheet(info, answers, lastDone) {
+        const start = button(info.action, async () => {
+            await startRun();
+            closeSheet();
+        }, true);
+        if (info.disabled) start.disabled = true;
+
+        return h('section', { class: 'card sheet', role: 'dialog', 'aria-label': 'Actualisation France Travail' },
+            h('header', {},
+                h('span', { class: 'title' }, 'Actualisation France Travail'),
+                h('button', { id: 'close', class: 'close', 'aria-label': 'Fermer', onclick: closeSheet }, '×')),
+            h('div', { class: `status ${info.tone}`, role: 'status' }, info.text),
+            h('h2', {}, 'Vos réponses ce mois-ci'),
+            h('div', { class: 'questions' }, ...buildQuestions(answers)),
+            h('p', { class: 'hint' }, "Si vous répondez « Oui », l'extension vous laisse remplir cette partie vous-même."),
+            start,
+            h('footer', {},
+                h('span', {}, lastDone ? `Dernière : ${formatDate(lastDone.date)}` : ''),
+                h('button', { class: 'link', onclick: exportDiagnostic }, 'Exporter le diagnostic')));
+    }
+
+    function closeSheet() {
+        sheetOpen = false;
+        focusOnRender = 'fab';
+        render();
     }
 
     function renderPanel(run, step, lastDone, answers) {
-        const period = currentPeriod();
-        let view = null;
+        const info = statusInfo(run, lastDone);
+        let view;
+
+        // Sur une page d'actualisation, si c'est à faire, le panneau s'ouvre de lui-même (une fois).
+        if (step && info.state === 'todo' && !autoOpened) {
+            autoOpened = true;
+            sheetOpen = true;
+        }
 
         if (run.status === 'running') {
             view = card('', 'Actualisation en cours', () => setRun({ status: 'idle' }),
@@ -344,31 +385,29 @@
             view = card('danger', idx >= 0 ? `Étape ${idx + 1} bloquée` : 'Actualisation bloquée', () => setRun({ status: 'idle' }),
                 h('p', {}, run.message || 'Une erreur est survenue.'),
                 h('div', { class: 'actions' },
-                    button('Réessayer', () => setRun({ status: 'running', startedAt: Date.now(), submitted: {} }), true),
+                    button('Réessayer', startRun, true),
                     button('Exporter le diagnostic', exportDiagnostic)));
         } else if (run.status === 'done') {
             view = card('success', 'Actualisation enregistrée', () => setRun({ status: 'idle' }),
                 h('p', {}, `Votre actualisation de ${run.period || 'ce mois'} est faite. Rien d'autre à faire.`));
-        } else if (step && period.open && lastDone?.period !== period.key && !dismissedInvite) {
-            // Sur une page d'actualisation sans run en cours : on propose de lancer.
-            const yes = QUESTIONS.filter((q) => answers[q.key] === 'oui');
-            view = card('', 'Actualisation automatique', () => { dismissedInvite = true; render(); },
-                h('p', {}, yes.length ? `Réponses « Oui » : ${yes.map((q) => q.label).join(', ')}` : 'Réponses : rien à déclarer ce mois-ci.'),
-                h('p', { class: 'hint' }, "Modifiez vos réponses depuis l'icône de l'extension."),
-                h('div', { class: 'actions' }, button("Lancer l'actualisation", startRun, true)));
+        } else if (sheetOpen) {
+            view = sheet(info, answers, lastDone);
+        } else {
+            view = fab(info);
         }
 
-        const key = JSON.stringify([run, step?.id, dismissedInvite, answers]);
+        const key = JSON.stringify([run, sheetOpen, info, answers, lastDone]);
         if (key === lastRender) return;
         lastRender = key;
 
-        if (!view) {
-            host?.remove();
-            return;
-        }
         ensureHost();
-        shadow.querySelector('section')?.remove();
+        // Garde le focus clavier sur le même élément après un nouveau rendu.
+        const focusedId = focusOnRender || shadow.activeElement?.id;
+        focusOnRender = null;
+        [...shadow.children].filter((c) => c.tagName !== 'LINK').forEach((c) => c.remove());
         shadow.append(view);
+        const target = focusedId === 'fab' ? shadow.querySelector('.fab') : focusedId && shadow.getElementById(focusedId);
+        target?.focus();
     }
 
     // ---------- Démarrage ----------

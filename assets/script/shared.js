@@ -106,5 +106,67 @@
         };
     }
 
-    globalThis.FT = { MONTHS, QUESTIONS, STEPS, START_URL, RUN_TTL_MS, defaultAnswers, currentPeriod, formatDate, getState };
+    // Statut affiché en tête de la popup et du panneau sur le site.
+    // `state` : running | error | off | done | todo.
+    function statusInfo(run, lastDone) {
+        const period = currentPeriod();
+        if (run.status === 'running') {
+            return { state: 'running', tone: 'info', text: 'Actualisation en cours dans un onglet France Travail.', action: "Voir l'actualisation" };
+        }
+        if (run.status === 'error') {
+            return { state: 'error', tone: 'danger', text: run.message || 'La dernière tentative a échoué.', action: 'Réessayer' };
+        }
+        if (!period.open) {
+            return { state: 'off', tone: 'neutral', text: `Pas d'actualisation en ce moment. Prochaine ouverture le ${period.nextOpen}.`, action: "Lancer l'actualisation", disabled: true };
+        }
+        if (lastDone?.period === period.key) {
+            return { state: 'done', tone: 'success', text: `Actualisation de ${period.label} faite le ${formatDate(lastDone.date)}.`, action: 'Relancer quand même' };
+        }
+        return { state: 'todo', tone: 'warning', text: `Actualisation de ${period.label} à faire, avant le ${period.deadline}.`, action: "Lancer l'actualisation" };
+    }
+
+    // Lignes « question + Non/Oui » ; chaque changement est enregistré directement.
+    function buildQuestions(answers) {
+        return QUESTIONS.map((q) => {
+            const row = document.createElement('fieldset');
+            row.className = 'row';
+            const legend = document.createElement('legend');
+            legend.textContent = q.label;
+            const toggle = document.createElement('div');
+            toggle.className = 'toggle';
+            for (const value of ['non', 'oui']) {
+                const input = document.createElement('input');
+                Object.assign(input, { type: 'radio', name: q.key, id: `ft-${q.key}-${value}`, value, checked: answers[q.key] === value });
+                input.addEventListener('change', async () => {
+                    const { answers: current } = await getState();
+                    await chrome.storage.local.set({ answers: { ...current, [q.key]: value } });
+                });
+                const label = document.createElement('label');
+                label.htmlFor = input.id;
+                label.textContent = value === 'oui' ? 'Oui' : 'Non';
+                toggle.append(input, label);
+            }
+            row.append(legend, toggle);
+            return row;
+        });
+    }
+
+    async function startRun() {
+        await chrome.storage.local.set({ run: { status: 'running', startedAt: Date.now(), submitted: {} } });
+    }
+
+    async function exportDiagnostic() {
+        const { diagnostics = [], run } = await chrome.storage.local.get(['diagnostics', 'run']);
+        const blob = new Blob([JSON.stringify({ version: chrome.runtime.getManifest().version, run, diagnostics }, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'diagnostic-actualisation.json';
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    }
+
+    globalThis.FT = {
+        MONTHS, QUESTIONS, STEPS, START_URL, RUN_TTL_MS,
+        defaultAnswers, currentPeriod, formatDate, getState, statusInfo, buildQuestions, startRun, exportDiagnostic,
+    };
 })();
