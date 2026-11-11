@@ -2,18 +2,34 @@
   "manifest_version": 3,
   "name": "Auto-actualisation France Travail",
   "version": "1.2.0",
-  "description": "Actualisez votre situation sur France Travail automatiquement chaque mois, en un clic, grâce à un bouton intégré.",
+  "description": "Faites votre actualisation mensuelle France Travail en un clic, avec vos réponses, et suivez chaque étape.",
   "icons": {
-    "16": "assets/icons/franceTravail.webp",
-    "48": "assets/icons/franceTravail.webp",
-    "128": "assets/icons/franceTravail.webp"
+    "16": "assets/icons/icon-16.png",
+    "48": "assets/icons/icon-48.png",
+    "128": "assets/icons/icon-128.png"
   },
+  "action": {
+    "default_title": "Auto-actualisation France Travail",
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "assets/icons/icon-16.png",
+      "48": "assets/icons/icon-48.png"
+    }
+  },
+  "background": {
+    "service_worker": "assets/script/background.js"
+  },
+  "permissions": [
+    "storage",
+    "alarms"
+  ],
   "content_scripts": [
     {
       "matches": [
         "https://*.francetravail.fr/*"
       ],
       "js": [
+        "assets/script/shared.js",
         "assets/script/content.js"
       ],
       "run_at": "document_idle"
@@ -22,8 +38,7 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "/assets/style/styles.css",
-        "assets/icons/franceTravail.webp"
+        "assets/style/panel.css"
       ],
       "matches": [
         "https://*.francetravail.fr/*"

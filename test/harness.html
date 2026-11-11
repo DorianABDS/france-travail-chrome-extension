@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Fausse actualisation (test)</title>
+    <style>
+        body { font: 15px/1.5 system-ui, sans-serif; max-width: 640px; margin: 24px auto; padding: 0 16px; }
+        .dev { background: #f1f1f4; padding: 8px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 24px; }
+        .dev pre { white-space: pre-wrap; margin: 8px 0 0; }
+        fieldset { margin: 0 0 16px; }
+        .error { color: #b3261e; }
+    </style>
+</head>
+
+<body>
+    <div class="dev">
+        Banc de test du moteur.
+        <button id="dev-start">Démarrer (comme la popup)</button>
+        <button id="dev-oui">Répondre « oui » à formation</button>
+        <button id="dev-reset">Réinitialiser</button>
+        <pre id="dev-state"></pre>
+    </div>
+    <main id="app"></main>
+
+    <script>
+        // Simule un site « framework » : l'état du formulaire n'est mis à jour que par les
+        // événements change, et les IDs ne sont pas ceux de l'ancienne version du site.
+        const app = document.getElementById('app');
+        const path = location.pathname;
+        const answers = {};
+
+        function question(name, text) {
+            return `<fieldset><legend>${text}</legend>
+                <input type="radio" name="${name}" id="${name}-a" value="true"><label for="${name}-a">Oui</label>
+                <input type="radio" name="${name}" id="${name}-b" value="false"><label for="${name}-b">Non</label>
+            </fieldset>`;
+        }
+
+        function page(title, questions, buttonText, next) {
+            app.innerHTML = `<h1>${title}</h1>${questions.map((q) => question(...q)).join('')}
+                <p class="error" id="err"></p><button type="button" id="go">${buttonText}</button>`;
+            app.addEventListener('change', (e) => { answers[e.target.name] = e.target.value; });
+            document.getElementById('go').addEventListener('click', () => {
+                const missing = questions.filter(([n]) => !answers[n]);
+                if (missing.length) {
+                    document.getElementById('err').textContent = 'Veuillez répondre à toutes les questions.';
+                    return;
+                }
+                setTimeout(() => { location.href = next; }, 400);
+            });
+        }
+
+        if (path.endsWith('/activites')) {
+            // ?casse simule un site dont l'intitulé a changé : le moteur doit s'arrêter proprement.
+            const label = location.search.includes('casse') ? 'Question au libellé inconnu ?' : 'Avez-vous travaillé ou exercé une activité le mois dernier ?';
+            page('Vos activités', [['act', label]], 'Suivant', '/declaration/situations-particulieres');
+        } else if (path.endsWith('/situations-particulieres')) {
+            page('Situations particulières', [
+                ['f', 'Avez-vous suivi un stage ou une formation ?'],
+                ['m', 'Avez-vous été en arrêt maladie, congé maternité ou paternité ?'],
+                ['p', "Percevez-vous une pension d'invalidité ou de retraite ?"],
+            ], 'Suivant', '/declaration/validation');
+        } else if (path.endsWith('/validation')) {
+            page('Validation', [['keep', 'Souhaitez-vous rester inscrit comme demandeur d\'emploi ?']], 'Valider mon actualisation', '/declaration/confirmation');
+        } else if (path.endsWith('/confirmation')) {
+            app.innerHTML = '<h1>Merci</h1><p>Votre actualisation a bien été enregistrée.</p>';
+        } else {
+            app.innerHTML = '<h1>Espace personnel</h1><a href="/declaration/activites">M\'actualiser</a>';
+        }
+    </script>
+    <script src="/test/chrome-mock.js"></script>
+    <script src="/assets/script/shared.js"></script>
+    <script src="/assets/script/content.js"></script>
+    <script>
+        const show = async () => {
+            document.getElementById('dev-state').textContent = JSON.stringify(await chrome.storage.local.get(['run', 'answers', 'lastDone']), null, 1);
+        };
+        chrome.storage.onChanged.addListener(show);
+        show();
+        document.getElementById('dev-start').onclick = () => chrome.storage.local.set({ run: { status: 'running', startedAt: Date.now(), submitted: {} } });
+        document.getElementById('dev-oui').onclick = () => chrome.storage.local.set({ answers: { ...FT.defaultAnswers(), formation: 'oui' } });
+        document.getElementById('dev-reset').onclick = () => { localStorage.clear(); location.href = '/'; };
+    </script>
+</body>
+
+</html>

@@ -11,15 +11,17 @@ export default defineConfig([
       globals: {
         ...globals.browser,
         chrome: "readonly",
+        FT: "readonly",
+        importScripts: "readonly",
       },
       parserOptions: {
-        ecmaVersion: 2021,
-        sourceType: "module",
+        ecmaVersion: 2022,
+        sourceType: "script",
       },
     },
   },
   {
-    files: ["sync-version.js"],
+    files: ["**/sync-version.js", "eslint.config.mjs"],
     languageOptions: {
       globals: globals.node,
       parserOptions: {
