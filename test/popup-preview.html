@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<!-- Aperçu de la popup hors extension : même contenu que popup/popup.html, avec le faux chrome. -->
+<head>
+    <meta charset="UTF-8" />
+    <title>Aperçu popup (test)</title>
+    <link rel="stylesheet" href="/popup/popup.css">
+</head>
+
+<body>
+    <script>
+        fetch('/popup/popup.html').then((r) => r.text()).then((html) => {
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+            doc.querySelectorAll('script').forEach((s) => s.remove());
+            doc.querySelector('img').src = '/assets/icons/icon-48.png';
+            document.body.append(...doc.body.childNodes);
+            const load = (src) => new Promise((ok) => {
+                const s = document.createElement('script');
+                s.src = src;
+                s.onload = ok;
+                document.body.append(s);
+            });
+            load('/test/chrome-mock.js').then(() => load('/assets/script/shared.js')).then(() => load('/popup/popup.js'));
+        });
+    </script>
+</body>
+
+</html>

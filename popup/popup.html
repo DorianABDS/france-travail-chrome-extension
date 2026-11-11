@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Auto-actualisation France Travail</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+
+<body>
+    <header class="brand">
+        <img src="../assets/icons/icon-48.png" alt="" width="32" height="32">
+        <div>
+            <h1>Auto-actualisation</h1>
+            <p>France Travail</p>
+        </div>
+    </header>
+
+    <div id="status" class="status" role="status"></div>
+    <div id="countdown"></div>
+
+    <section aria-labelledby="answers-title">
+        <h2 id="answers-title">Vos réponses</h2>
+        <div id="questions" class="questions"></div>
+        <p class="hint">Si vous répondez « Oui », l'extension vous laisse remplir cette partie vous-même.</p>
+    </section>
+
+    <button id="start" class="primary" type="button">Lancer l'actualisation</button>
+    <button id="mark-done" class="link center" type="button" hidden>J'ai déjà fait mon actualisation</button>
+
+    <footer>
+        <span id="last"></span>
+        <button id="export" class="link" type="button">Exporter le diagnostic</button>
+    </footer>
+
+    <script src="../assets/script/shared.js"></script>
+    <script src="popup.js"></script>
+</body>
+
+</html>

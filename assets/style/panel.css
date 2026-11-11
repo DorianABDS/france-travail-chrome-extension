@@ -1,0 +1,317 @@
+/* Panneau injecté sur le site France Travail (dans un shadow DOM : isolé du CSS du site).
+   Couleurs reprises du site (variables --ft--color-*), sans thème sombre comme le site. */
+:host {
+    --ft-blue: #283276;
+    --ft-blue-hover: #1b2256;
+    --ft-blue-active: #0f1438;
+    --on-blue: #ffffff;
+    --info: #283276;
+    --info-bg: #e9e8f1;
+    --bg: #ffffff;
+    --text: #2e2e31;
+    --muted: #5b5d65;
+    --border: #cdcfd8;
+    --track: #e6e7ec;
+    --success: #13643f;
+    --success-bg: #d9f6e8;
+    --warn: #8a4b00;
+    --warn-bg: #fdf0e1;
+    --danger: #b3261e;
+    --danger-bg: #fdeceb;
+
+    all: initial;
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 2147483647;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+.card {
+    box-sizing: border-box;
+    width: 320px;
+    max-width: calc(100vw - 32px);
+    padding: 14px 16px;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08);
+    font-size: 14px;
+    line-height: 1.5;
+    animation: in 0.2s ease-out;
+}
+
+.card.success { border-color: var(--success); }
+.card.warn { border-color: var(--warn); }
+.card.danger { border-color: var(--danger); }
+.card.success .title { color: var(--success); }
+.card.warn .title { color: var(--warn); }
+.card.danger .title { color: var(--danger); }
+
+header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.title { font-weight: 600; font-size: 15px; }
+
+p { margin: 0 0 8px; }
+p:last-child { margin-bottom: 0; }
+.hint { color: var(--muted); font-size: 13px; }
+
+.close {
+    all: unset;
+    cursor: pointer;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    text-align: center;
+    line-height: 24px;
+    font-size: 18px;
+    color: var(--muted);
+}
+.close:hover { background: var(--track); }
+.close:focus-visible, .btn:focus-visible { outline: 2px solid var(--ft-blue); outline-offset: 2px; }
+
+.steps { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 6px; }
+.steps li { display: flex; align-items: center; gap: 8px; color: var(--muted); }
+.steps li.ok { color: var(--success); }
+.steps li.now { color: var(--text); font-weight: 600; }
+
+.dot {
+    flex: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid currentColor;
+    box-sizing: border-box;
+}
+.ok .dot { background: currentColor; }
+.now .dot { border-color: var(--ft-blue); border-right-color: transparent; animation: spin 0.8s linear infinite; }
+
+.bar { height: 4px; border-radius: 2px; background: var(--track); margin-bottom: 8px; overflow: hidden; }
+.bar > div { height: 100%; background: var(--ft-blue); transition: width 0.3s ease; }
+
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+
+.btn {
+    all: unset;
+    cursor: pointer;
+    padding: 7px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+}
+.btn:hover { background: var(--track); }
+.btn.primary { background: var(--ft-blue); border-color: var(--ft-blue); color: #fff; }
+.btn.primary:hover { background: var(--ft-blue-hover); border-color: var(--ft-blue-hover); }
+.btn.primary:active { background: var(--ft-blue-active); border-color: var(--ft-blue-active); }
+
+/* ---------- Bouton rond ---------- */
+
+.fab {
+    all: unset;
+    position: relative;
+    box-sizing: border-box;
+    display: grid;
+    place-items: center;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #283276;
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(40, 50, 118, 0.35), 0 2px 6px rgba(0, 0, 0, 0.12);
+    transition: transform 0.15s ease, background 0.15s ease;
+    animation: in 0.2s ease-out;
+}
+.fab:hover { background: var(--ft-blue-hover); transform: scale(1.06); }
+.fab:active { background: var(--ft-blue-active); }
+.fab:focus-visible { outline: 3px solid var(--ft-blue); outline-offset: 3px; }
+
+/* Halo qui pulse tant que l'actualisation reste à faire. */
+.fab.todo::before, .fab.error::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: #283276;
+    z-index: -1;
+    animation: pulse 2s ease-out infinite;
+}
+
+.badge {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 4px;
+    box-sizing: border-box;
+    border-radius: 10px;
+    border: 2px solid #fff;
+    background: #d1302a;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 16px;
+    text-align: center;
+}
+.badge svg { display: block; margin: 2px auto 0; }
+
+/* Hors période : compte à rebours au centre de la flèche circulaire. */
+.days {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    padding: 21px 2px 0 0;
+    box-sizing: border-box;
+    font-size: 19px;
+    font-weight: 700;
+    line-height: 1;
+}
+.days.two { padding-top: 22px; font-size: 15px; letter-spacing: -0.5px; }
+/* « j » plus petit, collé au chiffre : « 8j ». */
+.days .unit { font-size: 0.65em; font-weight: 600; margin-left: 1px; }
+/* Pastilles blanches sur les fonds vert et orange : coche ou horloge de la couleur du fond. */
+.fab.done .badge { background: #fff; color: #18753c; border-color: #18753c; }
+.fab.pending .badge { background: #fff; color: #b34000; border-color: #b34000; }
+
+/* États : vert = actualisation faite, orange = statut « en attente » lu sur le site. */
+.fab.done { background: #18753c; box-shadow: 0 6px 18px rgba(24, 117, 60, 0.35), 0 2px 6px rgba(0, 0, 0, 0.12); }
+.fab.done:hover { background: #125c2f; }
+.fab.done:active { background: #0d4322; }
+.fab.pending { background: #b34000; box-shadow: 0 6px 18px rgba(179, 64, 0, 0.35), 0 2px 6px rgba(0, 0, 0, 0.12); }
+.fab.pending:hover { background: #8f3300; }
+.fab.pending:active { background: #6b2600; }
+
+/* ---------- Panneau de réglages (mêmes éléments que la popup) ---------- */
+
+.sheet { width: 340px; max-height: calc(100vh - 32px); overflow-y: auto; }
+
+h2 { margin: 0 0 8px; font-size: 13px; font-weight: 600; }
+
+.status { border-radius: 8px; padding: 10px 12px; margin-bottom: 14px; font-size: 13px; }
+.status.info { background: var(--info-bg); color: var(--info); }
+.status.success { background: var(--success-bg); color: var(--success); }
+.status.warning { background: var(--warn-bg); color: var(--warn); }
+.status.danger { background: var(--danger-bg); color: var(--danger); }
+.status.neutral { background: var(--track); color: var(--muted); }
+
+.questions { border: 1px solid var(--border); border-radius: 8px; }
+
+.row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 0;
+    padding: 8px 10px;
+    border: 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+}
+.row:last-child { border-bottom: 0; }
+.row legend { float: left; padding: 0; }
+
+.toggle { display: flex; gap: 4px; flex: none; }
+.toggle input { position: absolute; opacity: 0; pointer-events: none; }
+.toggle label {
+    cursor: pointer;
+    padding: 2px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+}
+.toggle label:hover { background: var(--track); }
+.toggle input:checked + label { background: var(--ft-blue); border-color: var(--ft-blue); color: var(--on-blue); }
+.toggle input:focus-visible + label { outline: 2px solid var(--ft-blue); outline-offset: 2px; }
+
+.sheet .hint { margin: 8px 0 14px; font-size: 12px; }
+
+/* Compte à rebours jusqu'à la prochaine actualisation (hors période ou une fois validée). */
+.countdown {
+    display: grid;
+    justify-items: center;
+    gap: 2px;
+    margin: 0 0 16px;
+    padding: 14px 12px;
+    border-radius: 8px;
+    background: var(--info-bg);
+    color: var(--ft-blue);
+    text-align: center;
+}
+.countdown strong { font-size: 34px; line-height: 1.1; font-weight: 700; }
+.countdown span { font-size: 13px; font-weight: 600; }
+.countdown .when { font-weight: 400; color: var(--muted); font-size: 12px; }
+
+/* « Rester inscrit : Non » choisi : ligne et bandeau en rouge. */
+.row.danger { background: var(--danger-bg); color: var(--danger); }
+.row.danger .toggle input:checked + label { background: var(--danger); border-color: var(--danger); }
+.notice { margin-top: -6px; }
+
+/* Fenêtre de confirmation de « Rester inscrit : Non ». */
+.confirm {
+    box-sizing: border-box;
+    width: 340px;
+    max-width: calc(100vw - 32px);
+    padding: 18px;
+    border: 0;
+    border-radius: 12px;
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+}
+.confirm::backdrop { background: rgba(15, 20, 56, 0.45); }
+.confirm h2 { font-size: 16px; margin: 0 0 8px; color: var(--danger); }
+.confirm p { margin: 0 0 10px; }
+.confirm-actions { display: grid; gap: 8px; margin-top: 14px; }
+.confirm button {
+    all: unset;
+    box-sizing: border-box;
+    padding: 9px 12px;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: 600;
+    cursor: pointer;
+}
+.confirm .primary { background: var(--ft-blue); color: var(--on-blue); }
+.confirm .primary:hover { background: var(--ft-blue-hover); }
+.confirm .danger-outline { border: 1px solid var(--danger); color: var(--danger); }
+.confirm .danger-outline:hover { background: var(--danger-bg); }
+.confirm button:focus-visible { outline: 2px solid var(--ft-blue); outline-offset: 2px; }
+.sheet > .btn.primary { display: block; box-sizing: border-box; width: 100%; padding: 10px; text-align: center; font-size: 14px; font-weight: 600; }
+.btn:disabled { cursor: default; opacity: 0.45; }
+
+footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.link { all: unset; cursor: pointer; font-size: 12px; color: var(--muted); text-decoration: underline; }
+.link:hover { color: var(--text); }
+.link.center { display: block; margin: 10px auto 0; }
+.link:focus-visible { outline: 2px solid var(--ft-blue); outline-offset: 2px; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes in { from { opacity: 0; transform: translateY(8px); } }
+@keyframes pulse {
+    from { transform: scale(1); opacity: 0.5; }
+    to { transform: scale(1.6); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .card, .fab, .now .dot, .fab::before { animation: none; }
+}
