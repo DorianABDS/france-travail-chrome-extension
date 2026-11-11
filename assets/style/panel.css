@@ -1,19 +1,21 @@
-/* Panneau injecté sur le site France Travail (dans un shadow DOM : isolé du CSS du site). */
+/* Panneau injecté sur le site France Travail (dans un shadow DOM : isolé du CSS du site).
+   Couleurs reprises du site (variables --ft--color-*), sans thème sombre comme le site. */
 :host {
     --ft-blue: #283276;
     --ft-blue-hover: #1b2256;
+    --ft-blue-active: #0f1438;
     --on-blue: #ffffff;
     --info: #283276;
-    --info-bg: #eceefa;
+    --info-bg: #e9e8f1;
     --bg: #ffffff;
-    --text: #1d1d21;
-    --muted: #5c5f6e;
-    --border: rgba(29, 29, 33, 0.14);
-    --track: #e6e7ef;
-    --success: #1f7a4d;
-    --success-bg: #e8f5ee;
-    --warn: #8a5300;
-    --warn-bg: #fdf3e1;
+    --text: #2e2e31;
+    --muted: #5b5d65;
+    --border: #cdcfd8;
+    --track: #e6e7ec;
+    --success: #13643f;
+    --success-bg: #d9f6e8;
+    --warn: #8a4b00;
+    --warn-bg: #fdf0e1;
     --danger: #b3261e;
     --danger-bg: #fdeceb;
 
@@ -23,27 +25,6 @@
     bottom: 16px;
     z-index: 2147483647;
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-}
-
-@media (prefers-color-scheme: dark) {
-    :host {
-        --ft-blue: #8f9cff;
-        --ft-blue-hover: #aab4ff;
-        --on-blue: #12142b;
-        --info: #aab4ff;
-        --info-bg: #252a4d;
-        --bg: #1e1f26;
-        --text: #f1f1f4;
-        --muted: #a9abb8;
-        --border: rgba(255, 255, 255, 0.14);
-        --track: #33354a;
-        --success: #6fd3a0;
-        --success-bg: #17301f;
-        --warn: #f2c26b;
-        --warn-bg: #33270f;
-        --danger: #ff8a80;
-        --danger-bg: #3a1a18;
-    }
 }
 
 .card {
@@ -129,11 +110,8 @@ p:last-child { margin-bottom: 0; }
 }
 .btn:hover { background: var(--track); }
 .btn.primary { background: var(--ft-blue); border-color: var(--ft-blue); color: #fff; }
-.btn.primary:hover { background: var(--ft-blue-hover); }
-
-@media (prefers-color-scheme: dark) {
-    .btn.primary { color: #12142b; }
-}
+.btn.primary:hover { background: var(--ft-blue-hover); border-color: var(--ft-blue-hover); }
+.btn.primary:active { background: var(--ft-blue-active); border-color: var(--ft-blue-active); }
 
 /* ---------- Bouton rond ---------- */
 
@@ -153,8 +131,9 @@ p:last-child { margin-bottom: 0; }
     transition: transform 0.15s ease, background 0.15s ease;
     animation: in 0.2s ease-out;
 }
-.fab:hover { background: #1b2256; transform: scale(1.06); }
-.fab:focus-visible { outline: 3px solid #8f9cff; outline-offset: 3px; }
+.fab:hover { background: var(--ft-blue-hover); transform: scale(1.06); }
+.fab:active { background: var(--ft-blue-active); }
+.fab:focus-visible { outline: 3px solid var(--ft-blue); outline-offset: 3px; }
 
 /* Halo qui pulse tant que l'actualisation reste à faire. */
 .fab.todo::before, .fab.error::before {

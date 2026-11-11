@@ -1,42 +1,24 @@
+/* Couleurs reprises du site France Travail (variables --ft--color-* de francetravail.fr).
+   Pas de thème sombre : le site n'en a pas, et on garde son bleu marine partout. */
 :root {
     --ft-blue: #283276;
     --ft-blue-hover: #1b2256;
+    --ft-blue-active: #0f1438;
     --on-blue: #ffffff;
     --bg: #ffffff;
-    --surface: #f5f6fa;
-    --text: #1d1d21;
-    --muted: #5c5f6e;
-    --border: rgba(29, 29, 33, 0.14);
+    --surface: #f5f5f8;
+    --text: #2e2e31;
+    --muted: #5b5d65;
+    --border: #cdcfd8;
     --info: #283276;
-    --info-bg: #eceefa;
-    --success: #1f7a4d;
-    --success-bg: #e8f5ee;
-    --warning: #8a5300;
-    --warning-bg: #fdf3e1;
+    --info-bg: #e9e8f1;
+    --success: #13643f;
+    --success-bg: #d9f6e8;
+    --warning: #8a4b00;
+    --warning-bg: #fdf0e1;
     --danger: #b3261e;
     --danger-bg: #fdeceb;
-    color-scheme: light dark;
-}
-
-@media (prefers-color-scheme: dark) {
-    :root {
-        --ft-blue: #8f9cff;
-        --ft-blue-hover: #aab4ff;
-        --on-blue: #12142b;
-        --bg: #1e1f26;
-        --surface: #272833;
-        --text: #f1f1f4;
-        --muted: #a9abb8;
-        --border: rgba(255, 255, 255, 0.14);
-        --info: #aab4ff;
-        --info-bg: #252a4d;
-        --success: #6fd3a0;
-        --success-bg: #17301f;
-        --warning: #f2c26b;
-        --warning-bg: #33270f;
-        --danger: #ff8a80;
-        --danger-bg: #3a1a18;
-    }
+    color-scheme: light;
 }
 
 * { box-sizing: border-box; }
@@ -106,6 +88,7 @@ button { font: inherit; cursor: pointer; }
     font-weight: 600;
 }
 .primary:hover { background: var(--ft-blue-hover); }
+.primary:active { background: var(--ft-blue-active); }
 .primary:disabled { cursor: default; opacity: 0.45; }
 .primary:focus-visible, .link:focus-visible { outline: 2px solid var(--ft-blue); outline-offset: 2px; }
 
