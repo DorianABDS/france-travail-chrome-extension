@@ -81,8 +81,8 @@
                     <div class="title-container"><h4>Mon actualisation</h4><p><span class="status status-sm ${badge[0]}"><span class="status-icon"></span>
                         <span class="status-content"><span class="sr-only">Statut&nbsp;:&nbsp;</span><span>${badge[1]}</span></span></span></p></div>
                     <div class="description-container"><p>${badge[2]}</p></div>
-                    <div class="btn-container"><a href="/declaration/activites">M'actualiser</a></div>
-                </div></app-situation-card>`;
+                    <div class="btn-container"><a href="/declaration/activites">M'actualiser</a><a href="#">Calendrier<span class="sr-only">&nbsp;de l'actualisation</span></a></div>
+                </div></app-situation-card>`.replace(/>\s+</g, '><'); // comme Angular : aucun espace entre les blocs
         }
     </script>
     <script src="/test/chrome-mock.js"></script>

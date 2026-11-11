@@ -1,7 +1,7 @@
 // Content script : moteur d'actualisation + panneau de progression affiché sur le site.
 // Dépend de shared.js (objet global FT), chargé avant lui.
 (function () {
-    const { STEPS, QUESTIONS, RUN_TTL_MS, currentPeriod, formatDate, sameMonth, getState, markDone, statusInfo, buildQuestions, startRun, exportDiagnostic } = FT;
+    const { STEPS, QUESTIONS, RUN_TTL_MS, currentPeriod, formatDate, sameMonth, monthAfterMoisDe, getState, markDone, statusInfo, buildQuestions, startRun, exportDiagnostic } = FT;
 
     const CHOICE_SELECTOR = 'input[type=radio], input[type=checkbox], [role=radio], [role=checkbox]';
     const SUBMIT_WAIT_MS = 15000;
@@ -190,7 +190,7 @@
         const label = clean([...badge.querySelectorAll('.status-content > span:not(.sr-only)')].map((e) => e.textContent).join(' '))
             || clean(badge.textContent.replace(/statut\s*:/i, ''));
         const text = clean(card.textContent, 500);
-        const month = text.match(/mois d[e']\s*([a-zà-ÿ]+)/i)?.[1];
+        const month = monthAfterMoisDe(text);
         if (!month || !sameMonth(month, period.label)) return;
 
         const has = (...names) => names.some((n) => badge.classList.contains(`status-${n}`));

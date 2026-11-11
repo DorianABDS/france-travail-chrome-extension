@@ -98,10 +98,20 @@
         return `${d.getDate()} ${MONTHS[d.getMonth()]}`;
     }
 
-    // Compare des noms de mois sans tenir compte de la casse ni des accents (« Février » = « fevrier »).
+    // Minuscules sans accents (« Février » → « fevrier »).
+    function normalize(s) {
+        return (s || '').normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
+    }
+
     function sameMonth(a, b) {
-        const norm = (s) => (s || '').normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
-        return norm(a) === norm(b);
+        return normalize(a) === normalize(b);
+    }
+
+    // Mois cité après « mois de » / « mois d' » dans un texte. On cherche un des 12 noms connus plutôt
+    // que « le mot suivant » : le site colle ses blocs sans espace (« …mois de OctobreCalendrier… »).
+    function monthAfterMoisDe(text) {
+        const flat = normalize(text);
+        return MONTHS.find((m) => new RegExp(`mois d(e\\s*|'\\s*)${normalize(m)}`).test(flat)) || null;
     }
 
     // « de novembre », mais « d'octobre », « d'avril », « d'août ».
@@ -195,6 +205,6 @@
 
     globalThis.FT = {
         MONTHS, QUESTIONS, STEPS, START_URL, RUN_TTL_MS,
-        defaultAnswers, currentPeriod, formatDate, sameMonth, deMois, getState, markDone, statusInfo, buildQuestions, startRun, exportDiagnostic,
+        defaultAnswers, currentPeriod, formatDate, sameMonth, monthAfterMoisDe, deMois, getState, markDone, statusInfo, buildQuestions, startRun, exportDiagnostic,
     };
 })();
