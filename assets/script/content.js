@@ -1,7 +1,7 @@
 // Content script : moteur d'actualisation + panneau de progression affiché sur le site.
 // Dépend de shared.js (objet global FT), chargé avant lui.
 (function () {
-    const { STEPS, QUESTIONS, RUN_TTL_MS, currentPeriod, formatDate, sameMonth, monthAfterMoisDe, getState, markDone, statusInfo, buildCountdown, buildQuestions, startRun, exportDiagnostic } = FT;
+    const { STEPS, QUESTIONS, STAY, RUN_TTL_MS, buildUnregisterNotice, currentPeriod, formatDate, sameMonth, monthAfterMoisDe, getState, markDone, statusInfo, buildCountdown, buildQuestions, startRun, exportDiagnostic } = FT;
 
     const CHOICE_SELECTOR = 'input[type=radio], input[type=checkbox], [role=radio], [role=checkbox]';
     const SUBMIT_WAIT_MS = 15000;
@@ -97,11 +97,11 @@
     function detectStep() {
         const byUrl = STEPS.find((s) => s.url.test(location.pathname));
         if (byUrl) return byUrl;
-        return STEPS.find((s) => s.questions.every((q) => findChoice(q, q.fixed || 'non')));
+        return STEPS.find((s) => s.questions.every((q) => findChoice(q, 'non')));
     }
 
     function questionLabel(key) {
-        return QUESTIONS.find((q) => q.key === key)?.label || key;
+        return [...QUESTIONS, STAY].find((q) => q.key === key)?.label || key;
     }
 
     // ---------- État ----------
@@ -137,18 +137,27 @@
 
         const manual = [];
         for (const q of step.questions) {
-            const answer = q.fixed || answers[q.key];
-            const el = await waitFor(() => findChoice(q, answer));
-            if (!el) {
-                const name = q.fixed ? 'Souhaitez-vous rester inscrit ?' : questionLabel(q.key);
-                return fail(step, `La question « ${name} » est introuvable. Le site a peut-être changé : terminez à la main.`);
+            const answer = answers[q.key];
+            const handOff = answer === (q.handOffOn || 'oui');
+            const notFound = () => fail(step, `La question « ${questionLabel(q.key)} » est introuvable. Le site a peut-être changé : terminez à la main.`);
+
+            // Réponse que l'utilisateur doit donner lui-même (« Rester inscrit : Non ») : on vérifie
+            // seulement que la question est là, sans rien cocher.
+            if (handOff && q.untouched) {
+                if (!await waitFor(() => findChoice(q, 'oui') || findChoice(q, 'non'))) return notFound();
+                manual.push(q.key);
+                continue;
             }
+
+            const el = await waitFor(() => findChoice(q, answer));
+            if (!el) return notFound();
             select(el);
-            if (answer === 'oui' && !q.fixed) manual.push(q.key);
+            if (handOff) manual.push(q.key);
             await sleep(200);
         }
 
-        // Une réponse « oui » demande des précisions : on laisse la main à l'utilisateur.
+        // Une réponse « oui » demande des précisions (ou « Rester inscrit : Non » doit être donné
+        // par l'utilisateur) : on lui laisse la main.
         if (manual.length) {
             return setRun({ status: 'manual', step: step.id, manual });
         }
@@ -238,12 +247,18 @@
             return setRun({ status: 'idle' });
         }
 
+        const finalStep = STEPS.find((s) => s.final);
+        if (run.status === 'manual' && run.step === finalStep.id && step !== finalStep) {
+            // L'utilisateur a validé lui-même la dernière étape : on attend la confirmation.
+            if (await waitFor(isConfirmation, 5000)) return finishRun();
+            return;
+        }
+
         if (run.status === 'manual' && step && step.id !== run.step) {
             // L'utilisateur a complété l'étape manuelle : on reprend.
             return setRun({ status: 'running', manual: [] });
         }
 
-        const finalStep = STEPS.find((s) => s.final);
         if (run.status === 'running' && run.submitted?.[finalStep.id] && step !== finalStep) {
             // Validation envoyée : on attend la confirmation sur la page d'arrivée.
             if (await waitFor(isConfirmation, 5000)) return finishRun();
@@ -333,7 +348,8 @@
         shadow = host.attachShadow({ mode: 'open' });
         shadow.append(h('link', { rel: 'stylesheet', href: chrome.runtime.getURL('assets/style/panel.css') }));
         shadow.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && sheetOpen) closeSheet();
+            // Dans la fenêtre de confirmation, Échap ne ferme qu'elle.
+            if (e.key === 'Escape' && sheetOpen && !shadow.querySelector('dialog[open]')) closeSheet();
         });
         document.body.append(host);
     }
@@ -394,9 +410,11 @@
                 h('span', { class: 'title' }, 'Actualisation France Travail'),
                 h('button', { id: 'close', class: 'close', 'aria-label': 'Fermer', onclick: closeSheet }, '×')),
             h('div', { class: `status ${info.tone}`, role: 'status' }, info.text),
+            buildUnregisterNotice(answers),
             buildCountdown(info),
             h('h2', {}, `Vos réponses pour ${info.answersFor}`),
-            h('div', { class: 'questions' }, ...buildQuestions(answers)),
+            // La confirmation de « Rester inscrit : Non » s'ouvre dans le shadow DOM du panneau.
+            h('div', { class: 'questions' }, ...buildQuestions(answers, () => shadow)),
             h('p', { class: 'hint' }, "Si vous répondez « Oui », l'extension vous laisse remplir cette partie vous-même."),
             start,
             info.canMarkDone && h('button', { class: 'link center', onclick: () => markDone('manual') }, "J'ai déjà fait mon actualisation"),
@@ -426,9 +444,11 @@
                 stepList(run),
                 h('p', { class: 'hint' }, run.step ? "Ne fermez pas l'onglet." : "Connectez-vous et ouvrez l'actualisation : l'extension prendra le relais."));
         } else if (run.status === 'manual') {
-            const names = (run.manual || []).map((k) => `« ${questionLabel(k).replace(/\s*\?$/, '')} »`).join(', ');
+            const keys = run.manual || [];
+            const names = keys.filter((k) => k !== STAY.key).map((k) => `« ${questionLabel(k).replace(/\s*\?$/, '')} »`).join(', ');
             view = card('warn', 'À compléter par vous', () => setRun({ status: 'idle' }),
-                h('p', {}, `Vous avez répondu « Oui » à ${names}. Remplissez les précisions demandées puis passez à l'étape suivante. L'extension reprendra ensuite.`));
+                names && h('p', {}, `Vous avez répondu « Oui » à ${names}. Remplissez les précisions demandées puis passez à l'étape suivante. L'extension reprendra ensuite.`),
+                keys.includes(STAY.key) && h('p', {}, "Vous avez choisi de ne plus être inscrit : répondez vous-même « Non » à « Rester inscrit ? », puis validez votre actualisation sur le site."));
         } else if (run.status === 'error') {
             const idx = STEPS.findIndex((s) => s.id === run.step);
             view = card('danger', idx >= 0 ? `Étape ${idx + 1} bloquée` : 'Actualisation bloquée', () => setRun({ status: 'idle' }),
@@ -453,7 +473,7 @@
         // Garde le focus clavier sur le même élément après un nouveau rendu.
         const focusedId = focusOnRender || shadow.activeElement?.id;
         focusOnRender = null;
-        [...shadow.children].filter((c) => c.tagName !== 'LINK').forEach((c) => c.remove());
+        [...shadow.children].filter((c) => c.tagName !== 'LINK' && c.tagName !== 'DIALOG').forEach((c) => c.remove());
         shadow.append(view);
         const target = focusedId === 'fab' ? shadow.querySelector('.fab') : focusedId && shadow.getElementById(focusedId);
         target?.focus();

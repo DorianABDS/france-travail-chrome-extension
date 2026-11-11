@@ -235,16 +235,42 @@ h2 { margin: 0 0 8px; font-size: 13px; font-weight: 600; }
 .countdown span { font-size: 13px; font-weight: 600; }
 .countdown .when { font-weight: 400; color: var(--muted); font-size: 12px; }
 
-/* « Rester inscrit » : toujours Oui, affiché verrouillé. */
-.row.fixed { color: var(--muted); }
-.locked {
-    padding: 2px 10px;
-    border-radius: 6px;
-    background: var(--info-bg);
-    color: var(--ft-blue);
-    font-weight: 600;
-    white-space: nowrap;
+/* « Rester inscrit : Non » choisi : ligne et bandeau en rouge. */
+.row.danger { background: var(--danger-bg); color: var(--danger); }
+.row.danger .toggle input:checked + label { background: var(--danger); border-color: var(--danger); }
+.notice { margin-top: -6px; }
+
+/* Fenêtre de confirmation de « Rester inscrit : Non ». */
+.confirm {
+    box-sizing: border-box;
+    width: 340px;
+    max-width: calc(100vw - 32px);
+    padding: 18px;
+    border: 0;
+    border-radius: 12px;
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
 }
+.confirm::backdrop { background: rgba(15, 20, 56, 0.45); }
+.confirm h2 { font-size: 16px; margin: 0 0 8px; color: var(--danger); }
+.confirm p { margin: 0 0 10px; }
+.confirm-actions { display: grid; gap: 8px; margin-top: 14px; }
+.confirm button {
+    all: unset;
+    box-sizing: border-box;
+    padding: 9px 12px;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: 600;
+    cursor: pointer;
+}
+.confirm .primary { background: var(--ft-blue); color: var(--on-blue); }
+.confirm .primary:hover { background: var(--ft-blue-hover); }
+.confirm .danger-outline { border: 1px solid var(--danger); color: var(--danger); }
+.confirm .danger-outline:hover { background: var(--danger-bg); }
+.confirm button:focus-visible { outline: 2px solid var(--ft-blue); outline-offset: 2px; }
 .sheet > .btn.primary { display: block; box-sizing: border-box; width: 100%; padding: 10px; text-align: center; font-size: 14px; font-weight: 600; }
 .btn:disabled { cursor: default; opacity: 0.45; }
 

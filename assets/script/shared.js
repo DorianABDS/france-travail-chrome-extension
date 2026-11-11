@@ -12,6 +12,11 @@
         { key: 'pension', label: "Pension d'invalidité ?", default: 'non' },
     ];
 
+    // « Rester inscrit » : « Oui » par défaut. « Non » met fin à l'inscription : il se choisit avec
+    // une confirmation, l'extension ne le coche jamais elle-même, et il ne vaut que pour une
+    // actualisation (remis à « Oui » ensuite).
+    const STAY = { key: 'maintien', label: 'Rester inscrit ?', default: 'oui' };
+
     // Étapes du formulaire d'actualisation. Chaque élément est cherché d'abord par ses
     // anciens IDs, puis par le texte affiché (plus stable que les IDs).
     const STEPS = [
@@ -55,9 +60,11 @@
             url: /\/validation/i,
             questions: [{
                 key: 'maintien',
-                fixed: 'oui',
-                ids: { oui: '#question-maintienInscription-oui' },
+                ids: { oui: '#question-maintienInscription-oui', non: '#question-maintienInscription-non' },
                 text: /rester inscrit|maintien|inscrit/i,
+                // Sur « Non », l'extension ne coche rien et laisse l'utilisateur répondre sur le site.
+                handOffOn: 'non',
+                untouched: true,
             }],
             submit: { ids: ['#btn-valider-actu'], text: /^(valider|confirmer|envoyer|je valide)/i },
             final: true,
@@ -71,7 +78,7 @@
     const RUN_TTL_MS = 30 * 60 * 1000;
 
     function defaultAnswers() {
-        return Object.fromEntries(QUESTIONS.map((q) => [q.key, q.default]));
+        return Object.fromEntries([...QUESTIONS, STAY].map((q) => [q.key, q.default]));
     }
 
     // Date du jour. Le banc de test peut la simuler via `__FT_NOW__` (sans effet dans l'extension,
@@ -156,9 +163,14 @@
     }
 
     // Marque l'actualisation de la période comme faite. `source` : extension | site | manual.
+    // Un « Non » à « Rester inscrit » ne vaut que pour une actualisation : il est remis à « Oui » ici.
     async function markDone(source, extra = {}) {
         const period = currentPeriod();
-        await chrome.storage.local.set({ lastDone: { date: today().toISOString(), period: period.key || null, source, ...extra } });
+        const { answers } = await getState();
+        await chrome.storage.local.set({
+            lastDone: { date: today().toISOString(), period: period.key || null, source, ...extra },
+            answers: { ...answers, [STAY.key]: STAY.default },
+        });
     }
 
     // Statut affiché en tête de la popup et du panneau sur le site.
@@ -217,45 +229,82 @@
         return box;
     }
 
-    // Lignes « question + Non/Oui » ; chaque changement est enregistré directement.
-    function buildQuestions(answers) {
-        return QUESTIONS.map((q) => {
-            const row = document.createElement('fieldset');
-            row.className = 'row';
-            const legend = document.createElement('legend');
-            legend.textContent = q.label;
-            const toggle = document.createElement('div');
-            toggle.className = 'toggle';
-            for (const value of ['non', 'oui']) {
-                const input = document.createElement('input');
-                Object.assign(input, { type: 'radio', name: q.key, id: `ft-${q.key}-${value}`, value, checked: answers[q.key] === value });
-                input.addEventListener('change', async () => {
-                    const { answers: current } = await getState();
-                    await chrome.storage.local.set({ answers: { ...current, [q.key]: value } });
-                });
-                const label = document.createElement('label');
-                label.htmlFor = input.id;
-                label.textContent = value === 'oui' ? 'Oui' : 'Non';
-                toggle.append(input, label);
-            }
-            row.append(legend, toggle);
-            return row;
-        }).concat(stayRegisteredRow());
+    function el(tag, className, text) {
+        const node = document.createElement(tag);
+        if (className) node.className = className;
+        if (text) node.textContent = text;
+        return node;
     }
 
-    // « Rester inscrit » : toujours « Oui », c'est le but de l'actualisation. Affiché verrouillé
-    // pour que l'utilisateur voie ce qui sera répondu.
-    function stayRegisteredRow() {
-        const row = document.createElement('div');
-        row.className = 'row fixed';
-        const label = document.createElement('span');
-        label.textContent = 'Rester inscrit ?';
-        const value = document.createElement('span');
-        value.className = 'locked';
-        value.title = "Toujours « Oui » : c'est ce qui maintient votre inscription à France Travail.";
-        value.textContent = 'Oui, toujours';
-        row.append(label, value);
-        return row;
+    async function saveAnswer(key, value) {
+        const { answers } = await getState();
+        await chrome.storage.local.set({ answers: { ...answers, [key]: value } });
+    }
+
+    // Lignes « question + Non/Oui » ; chaque changement est enregistré directement.
+    // `root` (nœud, ou fonction qui le renvoie) reçoit la fenêtre de confirmation de « Rester inscrit : Non ».
+    function buildQuestions(answers, root = () => document.body) {
+        return [...QUESTIONS, STAY].map((q) => {
+            const isStay = q.key === STAY.key;
+            const row = el('fieldset', isStay && answers[q.key] === 'non' ? 'row danger' : 'row');
+            const toggle = el('div', 'toggle');
+            const inputs = {};
+            for (const value of ['non', 'oui']) {
+                const input = el('input');
+                Object.assign(input, { type: 'radio', name: q.key, id: `ft-${q.key}-${value}`, value, checked: answers[q.key] === value });
+                inputs[value] = input;
+                input.addEventListener('change', async () => {
+                    if (isStay && value === 'non') {
+                        // On revient à « Oui » tant que l'utilisateur n'a pas confirmé.
+                        inputs.oui.checked = true;
+                        if (!await confirmUnregister(root)) return;
+                    }
+                    await saveAnswer(q.key, value);
+                });
+                const label = el('label', null, value === 'oui' ? 'Oui' : 'Non');
+                label.htmlFor = input.id;
+                toggle.append(input, label);
+            }
+            row.append(el('legend', null, q.label), toggle);
+            return row;
+        });
+    }
+
+    // Fenêtre de confirmation avant de choisir « Non » à « Rester inscrit ». Le bouton sûr est
+    // sélectionné par défaut : Entrée ou Échap laissent l'inscription telle quelle.
+    function confirmUnregister(root) {
+        const dialog = el('dialog', 'confirm');
+        const form = el('form');
+        form.method = 'dialog';
+        const stay = el('button', 'primary', 'Rester inscrit');
+        Object.assign(stay, { value: 'stay', autofocus: true });
+        const leave = el('button', 'danger-outline', 'Oui, ne plus être inscrit');
+        leave.value = 'leave';
+        const actions = el('div', 'confirm-actions');
+        actions.append(stay, leave);
+        form.append(
+            el('h2', null, 'Ne plus être inscrit à France Travail ?'),
+            el('p', null, "Répondre « Non » met fin à votre inscription : vous ne serez plus suivi, et vos allocations peuvent s'arrêter. Pour être de nouveau inscrit, il faudra refaire une inscription."),
+            el('p', 'hint', "Une reprise d'emploi ne demande pas forcément de se désinscrire. En cas de doute, renseignez-vous auprès de France Travail."),
+            el('p', 'hint', "L'extension ne cochera pas « Non » elle-même : elle s'arrêtera à cette question pour que vous la validiez sur le site."),
+            actions,
+        );
+        dialog.append(form);
+        (typeof root === 'function' ? root() : root).append(dialog);
+        dialog.showModal();
+        stay.focus();
+        return new Promise((resolve) => {
+            dialog.addEventListener('close', () => {
+                resolve(dialog.returnValue === 'leave');
+                dialog.remove();
+            });
+        });
+    }
+
+    // Bandeau rappelant que « Rester inscrit : Non » est choisi (null sinon).
+    function buildUnregisterNotice(answers) {
+        if (answers[STAY.key] !== 'non') return null;
+        return el('div', 'status danger notice', "Vous avez choisi de ne plus être inscrit. L'extension s'arrêtera à la question « Rester inscrit ? » pour que vous y répondiez vous-même.");
     }
 
     async function startRun() {
@@ -273,7 +322,7 @@
     }
 
     globalThis.FT = {
-        MONTHS, QUESTIONS, STEPS, START_URL, RUN_TTL_MS,
+        MONTHS, QUESTIONS, STAY, STEPS, START_URL, RUN_TTL_MS, buildUnregisterNotice,
         defaultAnswers, today, currentPeriod, formatDate, sameMonth, monthAfterMoisDe, deMois, getState, markDone, statusInfo,
         buildCountdown, buildQuestions, startRun, exportDiagnostic,
     };

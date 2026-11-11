@@ -92,16 +92,29 @@ h2 { margin: 0 0 8px; font-size: 13px; font-weight: 600; }
 .countdown span { font-size: 13px; font-weight: 600; }
 .countdown .when { font-weight: 400; color: var(--muted); font-size: 12px; }
 
-/* « Rester inscrit » : toujours Oui, affiché verrouillé. */
-.row.fixed { color: var(--muted); }
-.locked {
-    padding: 2px 10px;
-    border-radius: 6px;
-    background: var(--info-bg);
-    color: var(--ft-blue);
-    font-weight: 600;
-    white-space: nowrap;
+/* « Rester inscrit : Non » choisi : ligne et bandeau en rouge. */
+.row.danger { background: var(--danger-bg); color: var(--danger); }
+.row.danger .toggle input:checked + label { background: var(--danger); border-color: var(--danger); }
+
+/* Fenêtre de confirmation de « Rester inscrit : Non ». */
+.confirm {
+    width: 300px;
+    padding: 16px;
+    border: 0;
+    border-radius: 12px;
+    background: var(--bg);
+    color: var(--text);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
 }
+.confirm::backdrop { background: rgba(15, 20, 56, 0.45); }
+.confirm h2 { font-size: 15px; margin: 0 0 8px; color: var(--danger); }
+.confirm p { margin: 0 0 10px; font-size: 13px; }
+.confirm .hint { margin: 0 0 8px; }
+.confirm-actions { display: grid; gap: 8px; margin-top: 12px; }
+.confirm button { padding: 9px 12px; border-radius: 8px; font-weight: 600; }
+.confirm .primary { border: 0; }
+.confirm .danger-outline { background: none; border: 1px solid var(--danger); color: var(--danger); }
+.confirm .danger-outline:hover { background: var(--danger-bg); }
 .primary[hidden] { display: none; }
 
 button { font: inherit; cursor: pointer; }
