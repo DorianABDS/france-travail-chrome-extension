@@ -169,14 +169,18 @@ p:last-child { margin-bottom: 0; }
 .days {
     position: absolute;
     inset: 0;
-    display: grid;
-    place-items: center;
-    padding-right: 2px;
-    font-size: 21px;
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    padding: 21px 2px 0 0;
+    box-sizing: border-box;
+    font-size: 19px;
     font-weight: 700;
     line-height: 1;
 }
-.days.two { font-size: 17px; letter-spacing: -0.5px; }
+.days.two { padding-top: 22px; font-size: 15px; letter-spacing: -0.5px; }
+/* « j » plus petit, collé au chiffre : « 8j ». */
+.days .unit { font-size: 0.65em; font-weight: 600; margin-left: 1px; }
 /* Pastilles blanches sur les fonds vert et orange : coche ou horloge de la couleur du fond. */
 .fab.done .badge { background: #fff; color: #18753c; border-color: #18753c; }
 .fab.pending .badge { background: #fff; color: #b34000; border-color: #b34000; }

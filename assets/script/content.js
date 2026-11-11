@@ -396,7 +396,8 @@
             const when = `${info.text} Prochaine actualisation dans ${days} jour${info.next.days > 1 ? 's' : ''} (${info.next.date}).`;
             el.title = when;
             el.setAttribute('aria-label', `Actualisation France Travail. ${when}`);
-            el.append(h('span', { class: days.length > 1 ? 'days two' : 'days', 'aria-hidden': 'true' }, days));
+            el.append(h('span', { class: days.length > 1 ? 'days two' : 'days', 'aria-hidden': 'true' },
+                days, h('span', { class: 'unit' }, 'j')));
             return el;
         }
         el.insertAdjacentHTML('afterbegin', ICON);
